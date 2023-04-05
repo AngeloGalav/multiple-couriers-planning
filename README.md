@@ -10,3 +10,5 @@ We have $m$ couriers that must distribute $n \ge m$ items at different customer 
 Each courier $i$ has a maximum load size $l_i$. Each item $j$ has a distribution point $j$ and a size $s_j$ (which can represent for instance a weight or a volume). 
 The goal of MCP is to _decide_ for each courier _the items to be distributed_ and _plan a tour_ (i.e. a sequence of location points to visit) to perform the necessary distribution tasks. 
 Each courier tour must start and end at a given origin point $o$. Moreover, the maximum load $l_i$ of the courier $i$ should be respected when items are assigned to it. To achieve a fair division among drivers, the objective is to minimize the maximum distance travelled by any courier.
+
+angelo
