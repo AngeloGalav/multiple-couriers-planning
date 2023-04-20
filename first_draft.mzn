@@ -32,7 +32,7 @@ constraint forall(i in 1..m, j in 1..n, k in 1..n) (
 constraint forall(i in 1..m, k in 1..n) (
     tour[i,k] != n+1 -> sum(j in 1..n) (x[i,j] * D[tour[i,k],j]) = sum(j in 1..n) (x[i,j] * D[tour[i,k-1],j]) + D[tour[i,k-1],tour[i,k]] % distance traveled by courier i must be consistent with its tour
 );
-constraint minimize(max([sum(k in 2..n+1) (D[tour[i,k-1],tour[i,k]]) | i in 1..m])); % minimize the maximum distance traveled by any courier
-
+var int: lossf = max ([sum(k in 2..n+1) (D[tour[i,k-1],tour[i,k]]) | i in 1..m]); % minimize the maximum distance traveled by any courier
+    % lo scemo non ha messo la prima somma (distanza da 'o' al primo dispatch point del tour di i)
 % Solve the problem
-solve satisfy;
+solve minimize lossf;
