@@ -58,3 +58,21 @@ When developing the project, students should pay attention to the following:
 ### Considerazioni 
 - Abbiamo usato la x come ci ha proposto Luca, anche se potremmo usare solo `tour`. 
     - È una variabile implicita, nel senso che anche se è ridondante in termini delle informazioni, ci aiuta coi costi computazionali in termini di tempo. 
+
+##### Altre considerazioni (che sistemeremo più avanti)
+
+DESCRIZIONE CONSTRAINT CP (4/21/2023):
+m: numero dei corrieri
+n: numero dei pacchi
+tour: array[1...m][1...n+1]
+x: array[1...n]
+
+C1: Ogni corriere deve trasportare un peso totale dei pacchi inferiore al suo load massimo (preferibilmente da fare tramite constraint su x)
+
+C2: Ogni pacco deve essere assegnato esattamente a un corriere (implied?)
+
+C3: Constraint di sincronizzazione tra tour e x (double implication?)
+
+C4: Il path di ogni corriere deve partire da O e finire in O (O equivale all'indice n+1 in tour)
+
+C5: Per ogni path del corriere (riga della matrice tour) ogni tappa deve essere diversa (ogni valore diverso da 0 deve essere diverso -- alldifferent_except?), e ogni pacco deve essere consegnato (implied dal modo in cui abbiamo definito x)
