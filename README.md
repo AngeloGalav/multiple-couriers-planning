@@ -52,3 +52,9 @@ When developing the project, students should pay attention to the following:
 - [ ] Note the all MiniZinc/Z3 functions that can be used in this/that the professors wants us to use. 
 - [ ] Find best practices in MiniZinc/Z3
 - [ ] Teach Nicola GitHub (merging, branching, issues...)
+
+
+----
+### Considerazioni 
+- Abbiamo usato la x come ci ha proposto Luca, anche se potremmo usare solo `tour`. 
+    - È una variabile implicita, nel senso che anche se è ridondante in termini delle informazioni, ci aiuta coi costi computazionali in termini di tempo. 
