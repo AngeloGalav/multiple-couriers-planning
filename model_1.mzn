@@ -10,53 +10,40 @@ array[1..n+1, 1..n+1] of int: D; % distance matrix
 
 % Define the decision variables
 array[1..n] of var 1..m: x; % x[i] contains the index j of the courier assigned to item i. 
-array[1..m, 1..n+1] of var 0..n+1: tour; % tour[i,k] is the k-th distribution point visited by courier i
+array[1..m, 1..n+1] of var 0..n+1: tour; % tour[i,k] is the k-th distribution point visited by courier i.
+array[1..m] of var 1..n+1: counter;
 
 % Define the constraints
 constraint forall(i in 1..m) (
-    sum(j in 1..n where x[j] == i) (s[j]) <= l[i] % each courier's load must be less than or equal to its maximum load (c1)
+  sum(j in 1..n where x[j] == i) (s[j]) <= l[i] % each courier's load must be less than or equal to its maximum load (c1)
 );
 
-% constraint forall(j in 1..n) (
-%    sum(i in 1..m) (x[i,j]) = 1 % each item must be assigned to exactly one courier (implied nella nostra implemetazione )
-% );
-
-constraint forall(i in 1..m, j in 1..n) (
-   tour[i,j] > 0 <-> x[j] == i % (c3)
-); 
-
-constraint forall(i in 1..m) (
-   tour[i, n+1] != 0 /\ count_eq(tour[i, ..], n+1, 1) % (c4)
+constraint forall(j in 1..n) (
+  exists(i in 1..m) (x[j] == i <-> exists(k in 1..n+1) (tour[i, k] == j))  % (c3.1)
 );
 
 constraint forall(i in 1..m) (
-  alldifferent_except_0(tour[i, ..]) % (c5)
+  count_eq(tour[i, ..], n+1, 1) % (c4) the number of occurrences of n+1 in tour[i,..] is constrained to 1.
 );
 
-constraint forall(j in 1..n+1) (
-    forall(i in 1..m) (tour[i, j] != j)
+constraint forall(i in 1..m) ( 
+  count_eq(x, i, counter[i])
+); % assigns value to the counter variable
+
+constraint forall(i in 1..m) (
+  forall (j in counter[i]+2..n+1) (tour[i,j] == 0)  
+  /\ forall (j in 1..counter[i]+1) (tour[i,j] > 0)    % (c4.1) the number of occurrences of n+1 in tour[i,..] is constrained to 1.
+  /\ tour[i, counter[i]+1] == n+1
 );
 
-% -----
+% (c4.2)
 
-% constraint forall(i in 1..m, k in 1..n+1) (
-%     tour[i,k] in 1..n+1 % each courier's tour must visit a valid distribution point
-% );
+set of int: S = {0, n+1};
+constraint (
+  alldifferent_except(tour, S)
+); % (c5) (in theory, we dont have to add another constraint that ensures that all values in the matrix are different, since we have vector x)
 
-% constraint forall(i in 1..m, j in 1..n, k in 1..n) (
-%    tour[i,k] = j -> x[i,j] = 1 % if item j is visited by courier i, then it must be assigned to courier i
-% );
+var int: lossf = max([sum(k in 2..n+1 where tour[i,k] > 0) (D[tour[i,k-1], tour[i,k]]) + D[n+1, tour[i,1]] | i in 1..m]); % minimize the maximum distance traveled by any courier
 
-% constraint forall(i in 1..m, k in 1..n) (
-%      tour[i,k] != n+1 -> sum(j in 1..n) (x[i,j] * D[tour[i,k],j]) = sum(j in 1..n) (x[i,j] * D[tour[i,k-1],j]) + D[tour[i,k-1],tour[i,k]] % distance traveled by courier i must be consistent with its tour
-% );
-
-constraint forall(j in 1..n+1, i in 1..m) (
-  tour[i,j] != 0 -> exists(k in 1..n+1) (tour[i,k] = j)
-);
-
-
-var int: lossf = max([sum(k in 1..n+1 where tour[i,k] > 0) (D[k, tour[i,k]]) | i in 1..m]); % minimize the maximum distance traveled by any courier
-    % lo scemo non ha messo la prima somma (distanza da 'o' al primo dispatch point del tour di i)
 % Solve the problem
 solve minimize lossf;
