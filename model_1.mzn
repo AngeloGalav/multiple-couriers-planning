@@ -18,8 +18,8 @@ constraint forall(i in 1..m) (
   sum(j in 1..n where x[j] == i) (s[j]) <= l[i] % each courier's load must be less than or equal to its maximum load (c1)
 );
 
-constraint forall(j in 1..n) (
-  exists(i in 1..m) (x[j] == i <-> exists(k in 1..n+1) (tour[i, k] == j))  % (c3.1)
+constraint forall(j in 1..n, i in 1..m) (
+  x[j] == i <-> exists(k in 1..n+1) (tour[i, k] == j)  % (c3.1)
 );
 
 constraint forall(i in 1..m) (
