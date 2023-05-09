@@ -43,43 +43,52 @@ When developing the project, students should pay attention to the following:
 
 ### Important/Big Tasks
 - [ ] Actually do the project
-    - [ ] CP model
-    - [ ] SAT model
-    - [ ] SMT model
+- [ ] CP model
+    - [x] define a model that works
+    - [ ] find optimal search method and heuristics
+    - [x] write python code for handling input/output
+- [ ] SAT model
+- [ ] SMT model
 
 ### Trivial Tasks
-- [ ] Write the first draft
+- [x] Write the first draft
 - [ ] Note the all MiniZinc/Z3 functions that can be used in this/that the professors wants us to use. 
 - [ ] Find best practices in MiniZinc/Z3
-- [ ] Teach Nicola GitHub (merging, branching, issues...)
+- [x] Teach Nicola GitHub (merging, branching, issues...)
 
 
 ----
 ### Considerazioni 
-- Abbiamo usato la x come ci ha proposto Luca, anche se potremmo usare solo `tour`. 
-    - È una variabile implicita, nel senso che anche se è ridondante in termini delle informazioni, ci aiuta coi costi computazionali in termini di tempo. 
+
 
 ##### Altre considerazioni (che sistemeremo più avanti)
 
 DESCRIZIONE CONSTRAINT CP (4/21/2023):
-m: number of couriers
+
+m: number of couriers  
 n: number of items
 
-tour: array[1...m][1...n+1] where each row contains the path of a courier. 
+Decision variables:
+
+- tour: array[1...m][1...n+1] where each row contains the path of a courier. 
 A path is an ordered sequence of visited points, and zeros are for padding.
 
-x: array[1...n] where x[i] contains the index of the courier assigned to item i.
+- x: array[1...n] where x[i] contains the index of the courier assigned to item i. This is an auxiliary variable which simplifies constraint definition.
 
-counter: array[1..m] where counter[j] contains the number of items delivered by courier j
+- counter: array[1..m] where counter[j] contains the number of items delivered by courier j. This is an auxiliary variable which simplifies the definition of constraint C6.
 
-C1: The total weight of items transported by a courier must be lower or equal than the courier's maximum laod. We use vaiable x to define this constraint.
+Constraints:
+- C1: The total weight of items transported by a courier must be lower or equal than the courier's maximum laod. We use vaiable x to define this constraint.
 
-C2: Each item must be assigned to one and only one courier. This constraint is implied from the definition of x.
+- C2: Each item must be assigned to one and only one courier. This constraint is implied from the definition of x.
 
-C3: Channeling constraints
-    C3.1: Channeling constraint between tour and x (each courier can only deliver the packages specified in x, and must deliver all the packages assigned in x)
-    C3.2: Channeling constraint between x and counter
+- C3: Channeling constraints
+    - C3.1: Channeling constraint between tour and x (each courier can only deliver the packages specified in x, and must deliver all the packages assigned in x)
 
-C4: Each courier's path must start in O and end in O (n+1 index in tour). The constraint for starting from O is implied by the definition of tour. The constraint for ending in O is satisfied bu having n+1 as the last nonzero element of each row.
+    - C3.2: Channeling constraint between x and counter
 
-C5: In each courier's path (row of tour), each courier must deliver each package only once.
+- C4: Each courier's path must start in O and end in O (n+1 index in tour). The constraint for starting from O is implied by the definition of tour. The constraint for ending in O is satisfied bu having n+1 as the last nonzero element of each row.
+
+- C5: In each courier's path (row of tour), each courier must deliver each package only once.
+
+- C6: Symmetry breaking constraint. Whith the variables and constraints defined above, we ignore the placement of zeros in our path rows, so the same path can be represented with any distribution of zeros inside the path. (for example the paths 1-5-3-8-0-0 and 1-0-5-0-3-8 are equivalent). This constraint requires all zeros to be after the the end of a path, removing this kind of simmetry.
