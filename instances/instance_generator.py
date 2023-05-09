@@ -18,8 +18,8 @@ def generate_mcp_instance(n, m, max_distance, max_capacity, max_size):
     return D, loads, sizes
 
 
-n = 30
-m = 10
+n = 9
+m = 6
 max_distance = 9
 max_capacity = 5
 max_size = 3
