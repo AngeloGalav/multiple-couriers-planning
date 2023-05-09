@@ -62,17 +62,24 @@ When developing the project, students should pay attention to the following:
 ##### Altre considerazioni (che sistemeremo più avanti)
 
 DESCRIZIONE CONSTRAINT CP (4/21/2023):
-m: numero dei corrieri
-n: numero dei pacchi
-tour: array[1...m][1...n+1]
-x: array[1...n]
+m: number of couriers
+n: number of items
 
-C1: Ogni corriere deve trasportare un peso totale dei pacchi inferiore al suo load massimo (preferibilmente da fare tramite constraint su x)
+tour: array[1...m][1...n+1] where each row contains the path of a courier. 
+A path is an ordered sequence of visited points, and zeros are for padding.
 
-C2: Ogni pacco deve essere assegnato esattamente a un corriere (implied?)
+x: array[1...n] where x[i] contains the index of the courier assigned to item i.
 
-C3: Constraint di sincronizzazione tra tour e x (double implication?)
+counter: array[1..m] where counter[j] contains the number of items delivered by courier j
 
-C4: Il path di ogni corriere deve partire da O e finire in O (O equivale all'indice n+1 in tour)
+C1: The total weight of items transported by a courier must be lower or equal than the courier's maximum laod. We use vaiable x to define this constraint.
 
-C5: Per ogni path del corriere (riga della matrice tour) ogni tappa deve essere diversa (ogni valore diverso da 0 deve essere diverso -- alldifferent_except?), e ogni pacco deve essere consegnato (implied dal modo in cui abbiamo definito x)
+C2: Each item must be assigned to one and only one courier. This constraint is implied from the definition of x.
+
+C3: Channeling constraints
+    C3.1: Channeling constraint between tour and x (each courier can only deliver the packages specified in x, and must deliver all the packages assigned in x)
+    C3.2: Channeling constraint between x and counter
+
+C4: Each courier's path must start in O and end in O (n+1 index in tour). The constraint for starting from O is implied by the definition of tour. The constraint for ending in O is satisfied bu having n+1 as the last nonzero element of each row.
+
+C5: In each courier's path (row of tour), each courier must deliver each package only once.
