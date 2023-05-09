@@ -87,7 +87,12 @@ Constraints:
 
     - C3.2: Channeling constraint between x and counter
 
-- C4: Each courier's path must start in O and end in O (n+1 index in tour). The constraint for starting from O is implied by the definition of tour. The constraint for ending in O is satisfied bu having n+1 as the last nonzero element of each row.
+- C4: Each courier's path must start in O and end in O (n+1 index in tour). 
+    - C4.1: The constraint for starting from O is implied by the definition of tour.
+
+    - C4.2: O can be present only once in the path (there has to be exactly one n+1 in each row).
+
+    - C4.3: O must be the last visited point in each path (n+1 must be the last nonzero element in each row)
 
 - C5: In each courier's path (row of tour), each courier must deliver each package only once.
 
