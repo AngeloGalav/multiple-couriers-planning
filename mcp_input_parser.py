@@ -1,3 +1,12 @@
+'''
+# how to use
+use this command:
+
+python mcp_input_parser.py [filename]
+
+it will output a parsed '.dzn' file
+'''
+
 import sys
 
 def parse_mcp() :
