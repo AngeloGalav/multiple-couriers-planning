@@ -11,7 +11,7 @@ array[1..n+1, 1..n+1] of int: D; % distance matrix
 % Define the decision variables
 array[1..n] of var 1..m: x; % x[i] contains the index j of the courier assigned to item i. 
 array[1..m, 1..n+1] of var 0..n+1: tour; % the row tour[i,..] contains the path of courier i
-array[1..m] of var 1..n+1: counter; % counter[j] contains the number of items delivered by courier j
+array[1..m] of var 1..n: counter; % counter[j] contains the number of items delivered by courier j
 
 % CONSTRAINT DEFINITION
 
@@ -24,7 +24,7 @@ constraint forall(i in 1..m) (
 /* C3.1 - Channeling constraint between tour and x (each courier can only deliver the packages specified
 in x, and must deliver all the packages assigned in x)*/
 constraint forall(j in 1..n, i in 1..m) (
-  x[j] == i <-> exists(k in 1..n+1) (tour[i, k] == j)  % (c3.1)
+  x[j] == i <-> exists(k in 1..n+1) (tour[i, k] == j)
 );
 
 % C3.2 - Channeling constraint between x and counter
@@ -45,7 +45,7 @@ which could improve propagation.*/
 set of int: S = {0, n+1};
 constraint (
   alldifferent_except(tour, S)
-); % (c5) (in theory, we dont have to add another constraint that ensures that all values in the matrix are different, since we have vector x)
+);
 
 % note: may be worth remodeling tour by removing n+1 entirely and comparing performances
 constraint forall(i in 1..m) (
