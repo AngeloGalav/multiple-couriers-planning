@@ -65,11 +65,20 @@ constraint forall(i in 1..m) (
   )
 );
 
-%TODO actually define a loss function without these additional variables
-array[1..n] of var int: tour_ord = arg_sort([tour[j]+(x[j]*m)|j in 1..n]);
-array[1..m+1] of var 1..n+1: seg = [1+sum(k in 1..i-1)(counter[k])| i in 1..m]++[n+1];
+function var int: seg(var int: i) = 
+  1+sum(k in 1..i-1)(counter[k]);
 
-var int: lossf =  max([sum(k in seg[i]..seg[i+1]-2)(D[tour_ord[k], tour_ord[k+1]]) + D[n+1, tour_ord[seg[i]]] + D[tour_ord[seg[i+1]-1], n+1] | i in 1..m]);
+function var int: get_item(var int: courier, var int: step) =   
+  arg_sort([tour[j]+(x[j]*m)|j in 1..n])[seg(courier)+step-1];
+
+% loss without tour_ord and seg (gives undefined)
+
+var int: lossf =  max([ 
+  sum(step in 1..counter[i]-1)(D[get_item(i, step) , get_item(i, step+1)]) + 
+  D[n+1, get_item(i, 1)] + 
+  D[get_item(i, counter[i]), n+1]
+  | i in 1..m]);
+
 
 solve minimize lossf;
 
@@ -78,6 +87,3 @@ output ["x =    \(x)\n"];
 output ["tour = \(tour)\n"];
 output ["counter = \(counter)\n"];
 output ["loss = \(lossf))))\n\n"];
-
-output ["tour_ord = \(tour_ord))))\n"];
-output ["seg = \(seg))))\n\n"];
