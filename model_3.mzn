@@ -21,7 +21,7 @@ For example, if courier 2 delivers items [2, 6, 3] in this order, then tour[2]=1
 
 array[1..n] of var 1..m: x; % x[i] contains the index j of the courier assigned to item i. 
 array[1..n] of var 1..n: tour; % tour[j] is defined in the comment above
-array[1..m] of var 1..n: counter; % counter[j] contains the number of items delivered by courier j
+%array[1..m] of var 1..n: counter; % counter[j] contains the number of items delivered by courier j
 
 % CONSTRAINTS
 
@@ -34,7 +34,6 @@ tour[j1] != tour[j2] must hold.
 
 C3 - if courier i must deliver k items [k1..kp], the relative values of tour tour[k1..kp] must be
 constrained between 1 and k
-    C3.1 - channeling constraint between counter and x
 
 C4 - IMPLIED CONSTRATINT (might be useless) - if courier i must deliver k items [k1..kp], each item kl
 must occur in tour[k1..kp] at least once
@@ -53,20 +52,25 @@ constraint forall(i in 1..m) (
   alldifferent([tour[j] | j in 1..n where x[j] == i])
 );
 
-% C3.1
-constraint forall(i in 1..m) ( 
-  count_eq(x, i, counter[i])
-);
-
 % C3
 constraint forall(i in 1..m) (
   forall(j in 1..n where x[j] == i) (
-    tour[j] <= counter[i]
+    count_leq(x, i, tour[j])
   )
 );
 
+% C4 - if k couriers have atleast p items, then we must have k occurrences of p in tour
+/*constraint implied_constraint(
+  forall(p in 1..n, k in 1..m)(
+    count_eq(tour, p, count([count(x, i)>=p | i  in 1..m]))
+  )
+);*/
+
+function var int: counter(var int: i) = 
+  count(x, i);
+
 function var int: seg(var int: i) = 
-  1+sum(k in 1..i-1)(counter[k]);
+  1+sum(k in 1..i-1)(counter(k));
 
 function var int: get_item(var int: courier, var int: step) =   
   arg_sort([tour[j]+(x[j]*m)|j in 1..n])[seg(courier)+step-1];
@@ -74,9 +78,9 @@ function var int: get_item(var int: courier, var int: step) =
 % loss without tour_ord and seg (gives undefined)
 
 var int: lossf =  max([ 
-  sum(step in 1..counter[i]-1)(D[get_item(i, step) , get_item(i, step+1)]) + 
+  sum(step in 1..counter(i)-1)(D[get_item(i, step) , get_item(i, step+1)]) + 
   D[n+1, get_item(i, 1)] + 
-  D[get_item(i, counter[i]), n+1]
+  D[get_item(i, counter(i)), n+1]
   | i in 1..m]);
 
 
@@ -85,5 +89,4 @@ solve minimize lossf;
 output ["Solution:\n"];
 output ["x =    \(x)\n"];
 output ["tour = \(tour)\n"];
-output ["counter = \(counter)\n"];
 output ["loss = \(lossf))))\n\n"];
