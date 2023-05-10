@@ -33,7 +33,7 @@ tour = [2, 4, 5, 7, 3, 1, 6];
 
 % Define the decision variables
 array[1..n] of var 1..m: x; % x[i] contains the index j of the courier assigned to item i. 
-array[1..n] of var 0..n: tour; % a segment tour[k..l] defines a path for a courier
+array[1..n] of var 1..n: tour; % a segment tour[k..l] defines a path for a courier
 array[1..m] of var 1..n: counter; % count[i] contains the number of items delivered by courier i
 array[1..m+1] of var 1..n+1: seg; /* seg[1..m] defines the starting indexes of the segments in tour
 and seg[m+1] = n+1, so that we can access the i-th segment of tour through slicing with 
