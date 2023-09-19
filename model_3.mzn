@@ -57,7 +57,7 @@ constraint forall(i in 1..m) (
   forall(j in 1..n where x[j] == i) (
     count_leq(x, i, tour[j])
   )
-);
+)::bounds;
 
 % C4 - if k couriers have atleast p items, then we must have k occurrences of p in tour
 /*constraint implied_constraint(
