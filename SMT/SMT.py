@@ -33,11 +33,11 @@ def solve_multi_courier_problem(m, n, s, w, D):
         solver.add(x[i]>=1)
         solver.add(x[i]<=m)
         solver.add(tour[i]>=1)
-        solver.add(tour[i]<=Sum([If(x[k]==x[i],1,0) for k in range(n)]))
+        solver.add(tour[i] <= Sum([If(x[k]==x[i],1,0) for k in range(n)]))
 
     #C1
     for i in range(m):
-        solver.add(s[i]>=Sum([If(x[j]==i,w[j],0) for j in range(n)]))
+        solver.add(s[i] >= Sum([If(x[j]==i,w[j],0) for j in range(n)]))
 
     #C2
     for i in range(n):
