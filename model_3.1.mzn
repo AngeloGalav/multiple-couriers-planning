@@ -23,11 +23,8 @@ For example, if courier 2 delivers items [2, 6, 3] in this order, then tour[2]=1
 
 array[1..n] of var 1..m: x; % x[i] contains the index j of the courier assigned to item i. 
 array[1..n] of var 1..n: tour; % tour[j] is defined in the comment above
-var LB..UB: cost;
 
-array[1..m] of var 0..UB: courier_costs;
-var LB..UB: final_cost;
-%array[1..m] of var 1..n: counter; % counter[j] contains the number of items delivered by courier j
+var LB..UB: cost;
 
 % CONSTRAINTS
 
@@ -63,20 +60,15 @@ constraint forall(i in 1..m) (
 )::bounds;
   
   
-constraint forall(i in 1..m) (
-  courier_costs[i] == (
-    sum(j1, j2 in 1..n where tour[j2]-tour[j1] == 1 /\ x[j1] == i /\ x[j2] == i)(D[j1, j2]) + 
-    sum(j in 1..n where tour[j]==1 /\ x[j]==i)(D[n+1, j]) + 
-    sum(j in 1..n where tour[j]==count(x, i) /\ x[j]==i)(D[j, n+1])
-  )
-);
+constraint cost == max([
+  sum(j1, j2 in 1..n where tour[j2]-tour[j1] == 1 /\ x[j1] == i /\ x[j2] == i)(D[j1, j2]) + 
+  sum(j in 1..n where tour[j]==1 /\ x[j]==i)(D[n+1, j]) + 
+  sum(j in 1..n where tour[j]==count(x, i) /\ x[j]==i)(D[j, n+1])
+  |i in 1..m]);
 
-constraint final_cost == max(courier_costs);
-
-solve minimize final_cost;
+solve minimize cost;
 
 output ["Solution:\n"];
 output ["x =    \(x)\n"];
 output ["tour = \(tour)\n"];
-output ["courier costs = \(courier_costs)\n\n"];
-output ["objective = \(final_cost)\n\n"];
+output ["objective = \(cost)\n\n"];
