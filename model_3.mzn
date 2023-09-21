@@ -66,19 +66,24 @@ constraint forall(i in 1..m) (
   )
 );*/
 
+% counts all packages for a courier
 function var int: counter(var int: i) = 
   count(x, i);
 
+% auxiliary function of get_item 
+% allows to get the position of the index of packages in the 
+% ordered version of tour
 function var int: seg(var int: i) = 
-  1+sum(k in 1..i-1)(counter(k));
+  1 + sum(k in 1..i-1) (counter(k));
 
+% returns the index of package delivered by courier at the a defined step
 function var int: get_item(var int: courier, var int: step) =   
-  arg_sort([tour[j]+(x[j]*m)|j in 1..n])[seg(courier)+step-1];
+  arg_sort([tour[j]+(x[j]*m) | j in 1..n]) [seg(courier)+step-1];
 
 % loss without tour_ord and seg (gives undefined)
 
-var int: lossf =  max([ 
-  sum(step in 1..counter(i)-1)(D[get_item(i, step) , get_item(i, step+1)]) + 
+var int: lossf = max([ 
+  sum(step in 1..counter(i)-1) (D[get_item(i, step), get_item(i, step+1)]) + 
   D[n+1, get_item(i, 1)] + 
   D[get_item(i, counter(i)), n+1]
   | i in 1..m]);

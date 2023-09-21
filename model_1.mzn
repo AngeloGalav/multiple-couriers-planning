@@ -51,7 +51,7 @@ constraint (
 constraint forall(i in 1..m) (
   forall (j in counter[i]+2..n+1) (tour[i,j] == 0) % C6
   /\ forall (j in 1..counter[i]+1) (tour[i,j] > 0) % C6
-  /\ tour[i, counter[i]+1] == n+1 % C4.3/C6 - this ensures the exact position of n+1
+  /\ tour[i, counter[i]+1] == n+1 % C4.3/C6 - this ensures the exact position of n+1 (should be simmetry breaking constraint)
 );
 
 var int: lossf = max([sum(k in 2..n+1 where tour[i,k] > 0) (D[tour[i,k-1], tour[i,k]]) + D[n+1, tour[i,1]] | i in 1..m]); % minimize the maximum distance traveled by any courier
