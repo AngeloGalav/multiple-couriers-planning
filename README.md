@@ -39,7 +39,7 @@ When developing the project, students should pay attention to the following:
 - If any pre-solving technique is used before invoking a solver (e.g., sorting or rearranging items) then __include the time taken__ for pre-solving in the reported total runtime.
 
 -----
-# TODOs (can be seen as Sofware Engineering Tasks)
+# TODOs (can be seen as Software Engineering Tasks)
 
 ### Important/Big Tasks
 - [ ] Actually do the project
@@ -96,4 +96,10 @@ Constraints:
 
 - C5: In each courier's path (row of tour), each courier must deliver each package only once.
 
-- C6: Symmetry breaking constraint. Whith the variables and constraints defined above, we ignore the placement of zeros in our path rows, so the same path can be represented with any distribution of zeros inside the path. (for example the paths 1-5-3-8-0-0 and 1-0-5-0-3-8 are equivalent). This constraint requires all zeros to be after the the end of a path, removing this kind of simmetry.
+- C6: Symmetry breaking constraint. With the variables and constraints defined above, we ignore the placement of zeros in our path rows, so the same path can be represented with any distribution of zeros inside the path. (for example the paths 1-5-3-8-0-0 and 1-0-5-0-3-8 are equivalent). This constraint requires all zeros to be after the the end of a path, removing this kind of symmetry.
+
+
+## Todo
+- [ ] Automatizzare i benchmark di un dato modello (guardare esempi prof su virtuale)
+- [ ] Provare euristica per variabile e scelta dei valori (combinarle)
+    - [ ] Stessa cosa con search strategies
