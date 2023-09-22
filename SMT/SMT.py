@@ -6,7 +6,9 @@ def read_input_file(file_path):
         m = int(file.readline().strip())
         n = int(file.readline().strip())
         s = [0 for _ in range(m)]
+        s = list(map(int, file.readline().strip().split()))
         w = [0 for _ in range(n)]
+        w = list(map(int, file.readline().strip().split()))
 
         # Inizializza la matrice delle distanze D
         D = [[0 for _ in range(n+1)] for _ in range(n+1)]
@@ -59,6 +61,7 @@ def solve_multi_courier_problem(m, n, s, w, D):
 
     if solver.check() == sat:
         model = solver.model()
+        print(Sum([If(x[j]==0,w[j],0) for j in range(n)]))
         print("Sat:")
         print(model)
     else:
@@ -69,6 +72,7 @@ def solve_multi_courier_problem(m, n, s, w, D):
 # Test
 if __name__ == "__main__":
     m,n,s,w,D = read_input_file('generated_unformatted_instance.txt')
+    print(s,w,D)
     result = solve_multi_courier_problem(m,n,s, w, D)
     if result:
         assignments, max_distance = result
