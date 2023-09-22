@@ -186,7 +186,7 @@ def sum_b(l1: T_Number, l2: T_Number) -> T_Z3Clause:                            
 
     return result
 
-def sub_b(l1: T_Number, l2: T_Number) -> T_Z3Clause:
+def sub_b(l1: T_Number, l2: T_Number) -> T_Z3Clause:                                #binary subtraction
     l1, l2 = get_bool_lists(l1, l2)
     max_len = max(len(l1), len(l2))
     l1 = pad(l1, max_len)
@@ -205,4 +205,32 @@ def sub_b(l1: T_Number, l2: T_Number) -> T_Z3Clause:
         borr_in = borr_out
 
     result = result[::-1]
+    return result
+
+def sum_b_enable(l1: T_Number, l2: T_Number, x:Bool) -> T_Z3Clause:                                #binary sum (into a Z3 formula)
+    l1, l2 = get_bool_lists(l1, l2)
+    max_len = max(len(l1), len(l2))
+    l1 = pad(l1, max_len)
+    l2 = pad(l2, max_len)
+    result = []
+
+    carry_in = False
+    carry_out = False
+
+    for i in range(max_len - 1, -1, -1):
+        a = l1[i]
+        b = And(x, l2[i])
+        result.append(Xor(Xor(a, b), carry_in))
+
+        carry_out = Or(And(Xor(a, b), carry_in), And(a, b))
+        carry_in = carry_out
+
+    result = result[::-1]
+
+    return result
+
+def sum_b_list(l: List[T_NumberAsBoolList], x:List[T_NumberAsBoolList]) -> T_Z3Clause:
+    result = And(x[0],l[0])
+    for i in range(1,len(l)):
+        result = sum_b_enable(result,l[i],x[i])
     return result
