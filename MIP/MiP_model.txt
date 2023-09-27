@@ -1,0 +1,72 @@
+Constants:
+_m: #couriers
+_n: #items
+
+Model variables:
+_X[i, j, k]: tri-dimnesional array of binary variables, where i and j are nodes (items or the starting point n+1), and k is a courier.
+             X[i, j, k]=1 if courier k goes from node i to node j, and 0 otherwise. (i,j in 1..n+1, k in 1..m)
+	Note - X[i, i, k] = 0, so in the implementation diagonal variables are not created (in visualization they still appear as 0)
+
+_Y[i, k]: bi-dimensional array of binary variables where i is an item (1..n) and k is a courier.
+          Y[i, k]=1 if courier k delivers item i. (i in 1..n, k in 1..)
+
+_U[i]: monodimensional array of dummy variables (1 <= U[i] <= n) used for subtour elimination in C5 (i in 1..n)
+
+_C[k]: monodimensional array of auxiliary variables, where C[k] is the cost of the tour of courier k
+
+_B[k]: monodimensional array of binary dummy variables for implementing linearized max constraint
+
+_MaxCost: objective variable to minimize, maximum path cost
+
+Constraints:
+
+C1: each item has to be delivered once (has to be arrived to and departed from exactly once)
+
+C2: If a item's node is arrived to, or departed from by a vehicle k, then the item is assigned to curier k
+
+C3: Demand assigned to a courier has to be lower than its max capacity
+
+C4: each courier can leave the origin and return to it at most once (0 times if it has no items assigned)
+    Note -  the fact that each nonzero path starts and ends with n+1 is guaranteed by the fact that, thanks to C1, each node 1..n has to
+	    botth be arrived to and departed from, so a path has to start and end in n+1
+
+C5: Subtours aren't allowed (we need to eliminate the possibility of loops forming), using MTZ constraint
+
+Mathematical formulations:
+-- C1 --
+for each i in 1..n: sum(k in 1..m){sum(j in 1..n+1){X[i, j, k]}} = 1 //each node has to be departed from once
+
+for each j in 1..n: sum(k in 1..m){sum(i in 1..n+1){X[i, j, k]}} = 1 //each node has to be arrived to once
+
+-- C2 --
+for each i in 1..n, for each k in 1..m: sum(j in 1..n+1){X[i, j, k]} = Y[i, k] //courier k departs from node i <--> item i is assigned to k
+
+for each j in 1..n, for each k in 1..m: sum(i in 1..n+1){X[i, j, k]} = Y[j, k] //courier k arrives at node j <--> item j is assigned to k
+
+-- C3 --
+for each k in 1..m: sum(i in 1..n){s[i]*Y[i, k]} <= l[k]
+
+-- C4 --
+for each k in 1..m: sum(j in 1..n){X[n+1, j, k]} <= 1 //each courier can leave the origin at most once
+
+for each k in 1..m: sum(i in 1..n){X[i, n+1, k]} <= 1 //each courier can arrive at the origin at most once
+
+-- C5 --
+for each k in 1..m, for each i in 1..n, for each j in 1..n (j != i): U[i] - U[j] + (n+1)*X[i, j, k] <= n
+
+-- cost constraints --
+for each k in 1..m: C[k] = sum(i in 1..n+1){sum(j in 1..n+1){D[i, j]*X[i, j, k]}}
+
+//max constraint
+sum(k in 1..m){B[K]} = 1
+forall k in 1..m: MaxCost >= C[k]
+forall k in 1..m: MaxCost <= C[k] + UB - UB*B[k]
+
+-- domain constraints --
+for each k in 1..m, for each i in 1..n+1, for each j in 1..n+1: 0 <= X[i, j, k] <= 1
+for each k in 1..m, for each i in 1..n: 0 <= Y[i, k] <= 1
+for each i in 1..n: 1 <= U[i] <= n
+
+for each k in 1..m: 0 <= C[k] <= UB
+for each k in 1..m: 0 <= B[k] <= 1
+LB <= MaxCost <= UB
