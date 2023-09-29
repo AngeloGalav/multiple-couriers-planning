@@ -8,15 +8,18 @@ from itertools import combinations
 from z3 import Bool, BoolRef
 from z3 import Or, And, Not, Xor, Implies
 
-def pad(l, length)->BoolRef:                           #adds a padding in the number as boolean
+#adds a padding in the number as boolean
+def pad(l, length)->BoolRef:                           
     assert length > 0 and length >= len(l), '\nl:\t{}\nlength:\t{}'.format(l, length)
 
     return [False for _ in range(length - len(l))] + l
 
-def __is_bool(val: Union[bool, BoolRef]) -> bool:                                            #checks if it's bool or boolRef
+#checks if it's bool or boolRef
+def __is_bool(val: Union[bool, BoolRef]) -> bool:                                            
     return isinstance(val, bool) or isinstance(val, BoolRef)
 
-def get_bool_lists(*ll):                                                                 #a list of int into a list of boolList
+#a list of int into a list of boolList
+def get_bool_lists(*ll):
     ll = list(ll)
     for i in range(len(ll)):
         if isinstance(ll[i], int):
@@ -26,7 +29,8 @@ def get_bool_lists(*ll):                                                        
             ll[i] = [ll[i]]
     return ll
 
-def bool2int(l) -> int:                                                 #bool to int (example, [F,T,F,T]->5)
+#bool to int (example, [F,T,F,T]->5)
+def bool2int(l) -> int:                                                 
     result = 0
     l_b = []
     for _, l_i in enumerate(l):
@@ -39,7 +43,8 @@ def bool2int(l) -> int:                                                 #bool to
         result = (result << 1) | bool(int(digits))
     return result
 
-def int2boolList(n) -> List[bool]:                                                     #int to bool (example, 5->[T;F;T])
+#int to bool (example, 5->[T;F;T])
+def int2boolList(n) -> List[bool]:                                                     
     result = []
     base2 = format(n, "b")
     for bit in base2:
@@ -49,13 +54,16 @@ def int2boolList(n) -> List[bool]:                                              
             result.append(False)
     return result
 
-def all_F(l) -> BoolRef:                                           #all False
+#all False
+def all_F(l) -> BoolRef:                                           
     return And([Not(b) for b in l])
 
-def at_least_one_T(bools:List[Bool]) -> BoolRef:                                      #al least 1 (min 1 T)
+#al least 1 (min 1 T)
+def at_least_one_T(bools) -> BoolRef:                                      
     return Or(bools)
 
-def at_most_one_T(bools) -> BoolRef:                                       #at most 1  (max 1 T)
+#at most 1  (max 1 T)
+def at_most_one_T(bools) -> BoolRef:                                       
     ### HEULE ENCODING
     l = len(bools)
     result = []
@@ -71,10 +79,12 @@ def at_most_one_T(bools) -> BoolRef:                                       #at m
 
     return And(result)
 
-def exactly_one_T(bools) -> BoolRef:                                      # 1 T
+# 1 T
+def exactly_one_T(bools) -> BoolRef:                                      
     return And(at_most_one_T(bools) + [at_least_one_T(bools)])
 
-def ne(l1, l2) -> BoolRef:                                                            #not equal
+#not equal
+def ne(l1, l2) -> BoolRef:                                                            
     l1, l2 = get_bool_lists(l1, l2)
     min_len = min(len(l1), len(l2))
     start_idx = [len(l1) - min_len, len(l2) - min_len]
@@ -83,7 +93,8 @@ def ne(l1, l2) -> BoolRef:                                                      
     c2 = at_least_one_T(l2[:start_idx[1]])
     return Or([c1, c2] + [Xor(l1i, l2i) for l1i, l2i in zip(l1, l2)])
 
-def eq(l1, l2) -> BoolRef:                                        #equal
+#equal
+def eq(l1, l2) -> BoolRef:                                        
     l1, l2 = get_bool_lists(l1, l2)
     max_len = max(len(l1), len(l2))
     l1 = pad(l1, max_len)
@@ -91,7 +102,8 @@ def eq(l1, l2) -> BoolRef:                                        #equal
 
     return And([Not(Xor(l1[i], l2[i])) for i in range(max_len)])
 
-def __gte_same_len(l1, l2) -> BoolRef:      #l1>=l2 with same len
+#l1>=l2 with same len
+def __gte_same_len(l1, l2) -> BoolRef:      
     ### AND-CSE Encoding: Common SubExpression Elimination
     if len(l1) == 1:
         return Or(l1[0], Not(l2[0]))
@@ -109,7 +121,8 @@ def __gte_same_len(l1, l2) -> BoolRef:      #l1>=l2 with same len
 
     return And(first, second, And(third), And(fourth))
 
-def gte(l1, l2) -> BoolRef:                                            #l1>=l2
+#l1>=l2
+def gte(l1, l2) -> BoolRef:                                            
     l1, l2 = get_bool_lists(l1, l2)
     min_len = min(len(l1), len(l2))
     start_idx = [len(l1) - min_len, len(l2) - min_len]
@@ -119,7 +132,8 @@ def gte(l1, l2) -> BoolRef:                                            #l1>=l2
 
     return Or(c1, And(c2, __gte_same_len(l1[start_idx[0]:], l2[start_idx[1]:])))
 
-def __gt_same_len(l1:List[Bool], l2:List[Bool]) -> BoolRef:        #l1>l2 same len
+#l1>l2 same len
+def __gt_same_len(l1, l2) -> BoolRef:        
     ### AND-CSE Encoding: Common SubExpression Elimination
     if len(l1) == 1:
         return And(l1[0], Not(l2[0]))
@@ -137,7 +151,8 @@ def __gt_same_len(l1:List[Bool], l2:List[Bool]) -> BoolRef:        #l1>l2 same l
 
     return Or(first, And(second, And(third), Or(fourth)))
 
-def gt(l1:List[Bool], l2:List[Bool]) -> BoolRef:                                      #l1>l2
+#l1>l2
+def gt(l1, l2) -> BoolRef:                                      
     l1, l2 = get_bool_lists(l1, l2)
     min_len = min(len(l1), len(l2))
     start_idx = [len(l1) - min_len, len(l2) - min_len]
@@ -147,13 +162,16 @@ def gt(l1:List[Bool], l2:List[Bool]) -> BoolRef:                                
 
     return Or(c1, And(c2, __gt_same_len(l1[start_idx[0]:], l2[start_idx[1]:])))
 
-def lte(l1, l2) -> BoolRef:                                  #l1<=l2                             
+#l1<=l2
+def lte(l1, l2) -> BoolRef:                                                              
     return gte(l1=l2, l2=l1)
 
-def lt(l1, l2) -> BoolRef:                                   #l1<l2
+#l1<l2
+def lt(l1, l2) -> BoolRef:                                   
     return gt(l1=l2, l2=l1)
 
-def sum_b(l1, l2) -> BoolRef:                                #binary sum (into a Z3 formula)
+#binary sum (into a Z3 formula)
+def sum_b(l1, l2) -> BoolRef:                                
     l1, l2 = get_bool_lists(l1, l2)
     max_len = max(len(l1), len(l2))
     l1 = pad(l1, max_len)
@@ -175,7 +193,8 @@ def sum_b(l1, l2) -> BoolRef:                                #binary sum (into a
 
     return result
 
-def sub_b(l1, l2) -> BoolRef:                                #binary subtraction
+#binary subtraction
+def sub_b(l1, l2) -> BoolRef:
     l1, l2 = get_bool_lists(l1, l2)
     max_len = max(len(l1), len(l2))
     l1 = pad(l1, max_len)
