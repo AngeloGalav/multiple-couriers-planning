@@ -63,25 +63,25 @@ def at_least_one_T(bools) -> BoolRef:
     return Or(bools)
 
 #at most 1  (max 1 T)
-def at_most_one_T(bools) -> BoolRef:                                       
-    ### HEULE ENCODING
-    l = len(bools)
-    result = []
-    if l <= 3:  ###base case
+def at_most_one_T(bools) -> BoolRef:
+    if len(bools) <= 4: # base case
         return And([Not(And(b1, b2)) for b1, b2 in combinations(bools, 2)])
-    ###recursive case
+    
+    # recursive step
     y = Bool(f"yamo_{str(uuid.uuid4())}")
-    first = bools[:2].append(y)
-    result = [Not(And(b1, b2)) for b1, b2 in combinations(first, 2)]
+    first = bools[:3]
+    first.append(y)
+    c_first = at_most_one_T(first)
 
-    second = bools[2:].append(Not(y))
-    result += at_most_one_T(second)
+    last = bools[3:]
+    last.insert(0, Not(y))
+    c_last = at_most_one_T(last)
 
-    return And(result)
+    return And(c_first, c_last)
 
 # 1 T
 def exactly_one_T(bools) -> BoolRef:                                      
-    return And(at_most_one_T(bools) + [at_least_one_T(bools)])
+    return And(at_most_one_T(bools), at_least_one_T(bools))
 
 #not equal
 def ne(l1, l2) -> BoolRef:                                                            
@@ -138,7 +138,7 @@ def __gt_same_len(l1, l2) -> BoolRef:
     if len(l1) == 1:
         return And(l1[0], Not(l2[0]))
 
-    x = [Bool(f"x_{i}") for i in range(len(l1) - 1)]
+    x = [Bool(f"xgtsl_{str(uuid.uuid4())}") for i in range(len(l1) - 1)]
 
     first = And(l1[0], Not(l2[0]))
     second = (x[0] == Not(Xor(l1[0], l2[0])))
