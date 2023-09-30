@@ -1,4 +1,4 @@
-LOWER BOUND:
+### LOWER BOUND:
 
 First idea:
 Since at least one courier has to deliver an item, it needs to leave the origin node and return it.
@@ -15,10 +15,7 @@ General case - if there are m couriers and n items, a courier will have to deliv
 where mC1,...,mCQ are the Q lowest costs of arrival to nodes different from n+1.
 In general mC1,...,mCQ are the first Q elements of the sorted flattened array [sort(flatten(remove_diagonal(D[1:n+1, 1:n])))]
 
-
-
-
-UPPER BOUND:
+### UPPER BOUND:
 
 First idea:
 The solution with the highest cost is a solution where all items are delivered by one courier, and the path is a an hemiltonian cycle with the highest 
