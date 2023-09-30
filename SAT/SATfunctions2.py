@@ -103,23 +103,28 @@ def eq(l1, l2) -> BoolRef:
     return And([Not(Xor(l1[i], l2[i])) for i in range(max_len)])
 
 #l1>=l2 with same len
-def __gte_same_len(l1, l2) -> BoolRef:      
-    ### AND-CSE Encoding: Common SubExpression Elimination
+def __gte_same_len(l1, l2) -> BoolRef:
     if len(l1) == 1:
         return Or(l1[0], Not(l2[0]))
 
-    x = [Bool(f"xge_{str(uuid.uuid4())}") for i in range(len(l1) - 1)]
-
-    first = Or(l1[0], Not(l2[0]))
-    second = (x[0] == Not(Xor(l1[0], l2[0])))
-    third = []
+    # given two encodings [a0, ..., ak] and [b0, ..., bk]
+    # x[i] is true <--> aj = bj forall j <= i
+    x = [Bool(f"xgtsl_{str(uuid.uuid4())}") for i in range(len(l1) - 1)]
+    xConstr = []
+    xConstr.append(x[0] == (l1[0] == l2[0]))
     for i in range(len(l1) - 2):
-        third.append(x[i + 1] == (And(x[i], Not(Xor(l1[i + 1], l2[i + 1])))))
-    fourth = []
-    for i in range(len(l1) - 1):
-        fourth.append(Implies(x[i], Or(l1[i + 1], Not(l2[i + 1]))))
+        xConstr.append(x[i + 1] == (And(x[i], l1[i + 1] == l2[i + 1])))
 
-    return And(first, second, And(third), And(fourth))
+    # gtConstr[i] holds if all bits until i are the same (x[i] is true) and ai+1 = true and bi+1 = false
+    # if atleast one of these constraints holds or all bits are the same 
+    # (x[k-1] and (l1[k]==l2[k])) then a > b
+    gteConstr = []
+    gteConstr.append(And(l1[0], Not(l2[0])))
+    for i in range(len(l1) - 1):
+        gteConstr.append(And(x[i], And(l1[i + 1], Not(l2[i + 1]))))
+    gteConstr.append(And(x[-1], l1[-1] == l2[-1]))
+
+    return And(And(xConstr), Or(gteConstr))
 
 #l1>=l2
 def gte(l1, l2) -> BoolRef:                                            
@@ -133,23 +138,26 @@ def gte(l1, l2) -> BoolRef:
     return Or(c1, And(c2, __gte_same_len(l1[start_idx[0]:], l2[start_idx[1]:])))
 
 #l1>l2 same len
-def __gt_same_len(l1, l2) -> BoolRef:        
-    ### AND-CSE Encoding: Common SubExpression Elimination
+def __gt_same_len(l1, l2) -> BoolRef:
     if len(l1) == 1:
         return And(l1[0], Not(l2[0]))
 
+    # given two encodings [a0, ..., ak] and [b0, ..., bk]
+    # x[i] is true <--> aj = bj forall j <= i
     x = [Bool(f"xgtsl_{str(uuid.uuid4())}") for i in range(len(l1) - 1)]
-
-    first = And(l1[0], Not(l2[0]))
-    second = (x[0] == Not(Xor(l1[0], l2[0])))
-    third = []
+    xConstr = []
+    xConstr.append(x[0] == (l1[0] == l2[0]))
     for i in range(len(l1) - 2):
-        third.append(x[i + 1] == (And(x[i], Not(Xor(l1[i + 1], l2[i + 1])))))
-    fourth = []
-    for i in range(len(l1) - 1):
-        fourth.append(And(x[i], And(l1[i + 1], Not(l2[i + 1]))))
+        xConstr.append(x[i + 1] == (And(x[i], l1[i + 1] == l2[i + 1])))
 
-    return Or(first, And(second, And(third), Or(fourth)))
+    # gtConstr[i] holds if all bits until i are the same (x[i] is true) and ai+1 = true and bi+1 = false
+    # if atleast one of these constraints holds, then a > b
+    gtConstr = []
+    gtConstr.append(And(l1[0], Not(l2[0])))
+    for i in range(len(l1) - 1):
+        gtConstr.append(And(x[i], And(l1[i + 1], Not(l2[i + 1]))))
+
+    return And(And(xConstr), Or(gtConstr))
 
 #l1>l2
 def gt(l1, l2) -> BoolRef:                                      
