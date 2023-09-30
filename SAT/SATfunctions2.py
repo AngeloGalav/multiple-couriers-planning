@@ -100,7 +100,7 @@ def eq(l1, l2) -> BoolRef:
     l1 = pad(l1, max_len)
     l2 = pad(l2, max_len)
 
-    return And([Not(Xor(l1[i], l2[i])) for i in range(max_len)])
+    return And([l1[i] == l2[i] for i in range(max_len)])
 
 #l1>=l2 with same len
 def __gte_same_len(l1, l2) -> BoolRef:
@@ -231,3 +231,11 @@ def sum_b_list(l) -> BoolRef:
 
 def enable(l,en)->BoolRef:
     return [And(i,en) for i in l]
+
+# inputs: list of binary encodings and max value
+# output: expression maxEl = max(elems)
+def max_elem(elems, maxEl):
+    isPartOf = Or([eq(el, maxEl) for el in elems])
+    isGreaterEqual = And([gte(maxEl, el) for el in elems])
+
+    return And(isPartOf, isGreaterEqual)
