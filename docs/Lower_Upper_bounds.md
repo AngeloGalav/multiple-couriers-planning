@@ -11,14 +11,13 @@ Example case - if there are 3 couriers and 4 items have to be delivered, a couri
 In this case the cost will be >= mL+mR+mC1, where C1 is the cost of the less costly edge arriving to a node different from n+1.
 in this case [mC1 = min(i 1..n+1, j in 1..n where i!=j)(D[i, j])].
 
-General case - if there are m couriers and n items, a courier will have to deliver at least [Q=ceil(n/m)] items, so the cost will be >= mL+mR+mC1+...+mCQ,
-where mC1,...,mCQ are the Q lowest costs of arrival to nodes different from n+1.
-In general mC1,...,mCQ are the first Q elements of the sorted flattened array [sort(flatten(remove_diagonal(D[1:n+1, 1:n])))]
+General case - if there are m couriers and n items, a courier will have to deliver at least [Q=ceil(n/m)] items, so he will traverse Q-1 arcs that go from item to item, and the cost will be >= mL+mR+mC1+...+mCQ-1,
+where mC1,...,mCQ-1 are the Q-1 lowest cost arcs that don't involve n+1.
+In general mC1,...,mCQ-1 are the first Q-1 elements of the sorted flattened array [sort(flatten(remove_diagonal(D[1:n+1, 1:n])))]
 
 Second improvement:
 In the previous improvement, if two values mCi and mCj are two arcs that arrive at the same node, they can't both be traversed. We can get a tighter lower
-bound by computing the minimum cost of arrival for each node as m_j = min(i 1..n with i!=j){D[i, j]} for j in 1..n, and then take as mC1, .., mCQ the lowest m_j
-values.
+bound by computing the minimum cost of arrival for each node as m_j = min(i 1..n with i!=j){D[i, j]} for j in 1..n, and then take as mC1, .., mCQ-1 the lowest m_j values (LB = mL + mR + mC1 + ... + mCQ-1).
 This is also more efficient since sorting all costs is O(n^2*log(n^2)), while this algorithm is O(n^2 + nlog(n))=O(n^2)
 
 
