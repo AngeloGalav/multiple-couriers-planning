@@ -17,7 +17,7 @@ In general mC1,...,mCQ are the first Q elements of the sorted flattened array [s
 
 Second improvement:
 In the previous improvement, if two values mCi and mCj are two arcs that arrive at the same node, they can't both be traversed. We can get a tighter lower
-bound by computing the minimum cost of arrival for each node as m_j = min(i 1..n+1 with i!=j){D[i, j]} with j in 1..n, and then take as mC1, .., mCQ the lowest m_j
+bound by computing the minimum cost of arrival for each node as m_j = min(i 1..n with i!=j){D[i, j]} for j in 1..n, and then take as mC1, .., mCQ the lowest m_j
 values.
 This is also more efficient since sorting all costs is O(n^2*log(n^2)), while this algorithm is O(n^2 + nlog(n))=O(n^2)
 
