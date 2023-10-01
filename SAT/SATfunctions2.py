@@ -232,6 +232,14 @@ def sum_b_list(l) -> BoolRef:
 def enable(l,en)->BoolRef:
     return [And(i,en) for i in l]
 
+#inputs: list of n binary encodings and a list of n bools used for masking
+#output: encoding of sum(i in 1..n){elems[i]*mask[i]}
+def masked_sum_n(elems, mask):
+    res = [False]
+    for i in range(len(elems)):
+        res = sum_b(res, enable(elems[i], mask[i]))
+    return res
+
 # inputs: list of binary encodings and max value
 # output: expression maxEl = max(elems)
 def max_elem(elems, maxEl):
