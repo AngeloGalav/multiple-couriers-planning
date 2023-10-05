@@ -48,7 +48,7 @@ for each j in 1..n: ExactlyOne(k in 1..m, i in 1..n+1){X[i, j, k]} //each node h
 -- C2 --
 for each i in 1..n, for each k in 1..m: Y[i, k] <-> AtLeastOne(j in 1..n+1){X[i, j, k]} //courier k departs from node i <--> item i is assigned to k
 
-for each j in 1..n, for each k in 1..m: Y[i, k] <-> AtLeastOne(i in 1..n+1){X[i, j, k]} //courier k arrives at node j <--> item j is assigned to k
+for each j in 1..n, for each k in 1..m: Y[j, k] <-> AtLeastOne(i in 1..n+1){X[i, j, k]} //courier k arrives at node j <--> item j is assigned to k
 
 Note: we use AtLeastOne instead of exactly one since C1 already ensures that a node is arrived to exactly once.  
 
@@ -68,9 +68,20 @@ for each k in 1..m: C[k] = sum(i in 1..n+1){sum(j in 1..n+1){D[i, j]*X[i, j, k]}
 is_max(MaxCost, C[k] for k in 1..m)
 
 -- domain constraints --
-for each i in 1..n: 0 <= U[i] <= n-1
+
 for each k in 1..m: C[k] <= UB
 LB <= MaxCost <= UB
+
+Notes on domain constraints: 
+1_ since imposing the constraint [for each i in 1..n: 1 <= U[i] <= n] is not strictly necessary for the correct
+functioning of C5 (since the encodings are always non negative and a bound is given by the number of bits),
+we don't do it in SAT, since it saves the solver some additional constraints (as opposed to mip where having
+ bounds is neccessary and the stricter the domains the easier the search)
+
+2_ foe MaxCost we set [MaxCost <= UB] as an assertion during binary search
+
+3_ need to test weather [LB <= MaxCost] is a useful constraint for speeding up the solver or not (we still
+use LB in the binary search)
 '''
 
 solver = z3.Solver()
@@ -143,6 +154,9 @@ for k in myRange(m):
 
 solver.add(sf.max_elem([C[k] for k in myRange(m)], MaxCost))
 
+### PROVARE
+# solver.add(sf.gte(MaxCost, sf.int2boolList(LB)))
+
 # -- solve and visualization --
 
 def printTour(model, k):
@@ -172,6 +186,7 @@ high = UB
 low = LB
 bestModel = None
 
+# binary search for the minimum cost solution
 while high != low:
     mid = low + (high - low)//2
     print(f"trying MaxCost <= {mid}")
