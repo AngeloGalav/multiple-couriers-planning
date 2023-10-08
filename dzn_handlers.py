@@ -1,5 +1,6 @@
 import sys
 import re
+import math
 
 # The input text
 input_text = """
@@ -29,6 +30,10 @@ def get_values_from_dzn(text):
     integers = dict(re.findall(integer_pattern, text))
     lists = dict(re.findall(list_pattern, text))
     matrices = dict(re.findall(matrix_pattern, text))
+
+    # Convert values to ints
+    for key, value in integers.items():
+        integers[key] = int(value.strip())
 
     # Convert list strings to actual lists
     for key, value in lists.items():
@@ -73,6 +78,3 @@ def build_dzn(f) :
 
     f = open(filename + ".dzn", "w")
     f.write(output)
-
-def compute_LU_bound() :
-    pass
