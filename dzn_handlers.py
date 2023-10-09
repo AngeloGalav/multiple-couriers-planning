@@ -78,3 +78,22 @@ def build_dzn(f) :
 
     f = open(filename + ".dzn", "w")
     f.write(output)
+
+def compute_bounds(D, m, n) :
+    # computing the LB with Davide's method
+    Q = math.ceil(n/m)
+    d = [[D[i][j] for j in range(n+1) if i != j] for i in range(n+1)]
+
+    mL = min(d[-1]) # last row
+    mR = min([k[-1] for k in d]) # last column
+
+    mins = [min(d[i][:-1]) for i in range(n+1)]
+    mins.sort()
+
+    lower_b = sum(mins[:Q]) + mL + mR
+    upper_b = sum([max(d[i]) for i in range(n+1)]) # max for each row
+    return lower_b, upper_b
+
+# Quick usage example
+m, n, _, _, D = get_values_from_dzn(input_text)
+print(compute_bounds(D, m, n))
