@@ -2,7 +2,6 @@ import sys
 import re
 import math
 
-# The input text
 input_text = """
 m = 3;
 n = 7;
@@ -83,15 +82,16 @@ def compute_bounds(D, m, n) :
     # computing the LB with Davide's method
     Q = math.ceil(n/m)
     d = [[D[i][j] for j in range(n+1) if i != j] for i in range(n+1)]
+    cols = [[D[j][i] for j in range(n+1) if i != j] for i in range(n+1)]
 
     mL = min(d[-1]) # last row
     mR = min([k[-1] for k in d]) # last column
 
-    mins = [min(d[i][:-1]) for i in range(n+1)]
+    mins = [min(cols[i]) for i in range(n)]
     mins.sort()
 
     lower_b = sum(mins[:Q]) + mL + mR
-    upper_b = sum([max(d[i]) for i in range(n+1)]) # max for each row
+    upper_b = sum([max(cols[i]) for i in range(n)]) # max for each row
     return lower_b, upper_b
 
 # Quick usage example
