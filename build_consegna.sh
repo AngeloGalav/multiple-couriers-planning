@@ -3,7 +3,6 @@
 echo "Initiating consegna building..."
 mkdir models
 cp SMT MIP MAP SAT CP models
-cp
 
 # run python scripts?
 
