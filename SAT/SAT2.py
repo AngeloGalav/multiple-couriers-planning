@@ -59,7 +59,7 @@ def SAT_mcp(m, n, s, w, D):
         print("Unsat")
 
 
-m,n,s,w,D = read_input_file('instance.txt')
+m,n,s,w,D = read_input_file('../instances/SAT_instance.txt')
 print(m,n,s,w,D)
 SAT_mcp(m, n, s, w, D)
 
