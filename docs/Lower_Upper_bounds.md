@@ -21,10 +21,14 @@ bound by computing the minimum cost of arrival for each node as m_j = min(i 1..n
 This is also more efficient since sorting all costs is O(n^2*log(n^2)), while this algorithm is O(n^2 + nlog(n))=O(n^2)
 
 
-
 ### UPPER BOUND:
 
 First idea:
 The solution with the highest cost is a solution where all items are delivered by one courier, and the path is a an hemiltonian cycle with the highest
 possible cost. If we have n nodes, the worst solution will have a cost <= than (M_1 + M_2 + ... + M_n + M_(n+1)), where M_i is the cost of the most costly
 edge arriving to node i [M_i = max(j in 1..n+1 where j!=i)(D[j, i])]
+
+
+### Keep in mind:
+- Cols are the prices of arriving to node i from all other nodes
+- Rows are the prices of departing from node i to all of nodes
