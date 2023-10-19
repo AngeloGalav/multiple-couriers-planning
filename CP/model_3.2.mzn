@@ -67,6 +67,13 @@ constraint symmetry_breaking_constraint(
   )
 );
 
+% this constraint performs simmetry breaking on item assignments (may have better propagation)
+constraint symmetry_breaking_constraint(
+  forall(k1, k2 in 1..m where k1 < k2 /\ l[k1] == l[k2]) (
+    sum(j in 1..n where x[j] == k1)(s[j]) <= sum(j in 1..n where x[j] == k2)(s[j])
+  )
+);
+
 % in case all the matrix is symmetrical, every path is equivalent to the inverse path
 % we impose that, for a certain path, the item assigned first has smaller index than the item assigned last
 constraint symmetry_breaking_constraint(
