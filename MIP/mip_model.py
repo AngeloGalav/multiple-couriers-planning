@@ -1,5 +1,7 @@
 from pulp import *
 import numpy as np
+import os.path
+from enum import Enum
 
 m = 3
 n = 7
@@ -15,6 +17,35 @@ D = [[0, 3, 3, 6, 5, 6, 6, 2],
     [2, 3, 3, 4, 3, 4, 4, 0]]
 LB = 4
 UB = 51
+
+"""
+m = 10
+n = 13
+l = [185, 190, 200, 180, 200, 190, 200, 180, 195, 190]
+s = [22, 17, 10, 8, 14, 12, 17, 19, 25, 25, 6, 21, 6]
+
+D =[[0,  21, 86,  14,  84,  72,  24, 54,  83,  70,  8,  91,  42,  57], 
+    [21, 0,  71,  35,  70,  51,  16, 75,  62,  91,  29, 70,  57,  52], 
+    [86, 71, 0,   100, 39,  70,  87, 137, 81,  73,  78, 103, 128, 33],
+    [14, 35, 100, 0,   98,  86,  38, 49,  97,  56,  22, 105, 29,  71],
+    [84, 70, 39,  98,  0,   109, 86, 135, 120, 57,  76, 129, 126, 27], 
+    [63, 51, 70,  77,  109, 0,   49, 117, 11,  133, 71, 64,  90,  103],
+    [24, 16, 87,  38,  86,  49,  0,  78,  60,  94,  32, 67,  41,  60], 
+    [63, 84, 137, 49,  135, 135, 87, 0,   146, 79,  59, 154, 65,  108], 
+    [74, 62, 81,  88,  120, 11,  60, 128, 0,   144, 82, 68,  94,  114], 
+    [70, 91, 73,  56,  57,  142, 94, 79,  153, 0,   63, 161, 72,  40], 
+    [8,  29, 78,  22,  76,  80,  32, 59,  91,  63,  0,  99,  50,  49], 
+    [91, 70, 133, 105, 129, 64,  67, 145, 68,  161, 99, 0,   91,  122], 
+    [42, 57, 128, 29,  126, 90,  41, 65,  94,  72,  50, 91,  0,   99], 
+    [57, 52, 33,  71,  27,  103, 60, 108, 114, 40,  49, 122, 99,  0]]
+
+LB = 27+27
+UB = 91+ 84+ 137+ 105+ 135+ 142+ 94+ 145+ 153+ 161+ 99+ 161+ 128+ 114
+"""
+
+# choose between one of the following solvers: cbc, glpk, scip
+solv_arg = 'glpk'
+time_limit = 20
 
 def cost(i, j):
     return D[i-1][j-1]
@@ -110,16 +141,25 @@ prob += MaxCost
 
 # ---- solve and visualization ----
 
-prob.solve()
+if solv_arg == 'glpk':
+    solver = GLPK_CMD(timeLimit=time_limit)
+elif solv_arg == 'cbc':
+    solver = PULP_CBC_CMD(timeLimit=time_limit)
+elif solv_arg == 'scip':
+    solver = SCIP_CMD(timeLimit=time_limit)
+else:
+    raise Exception("invalid solver argument")
+
+status = prob.solve(solver)
 
 def printTour(X, k):
     print(np.array(
-        [[int(X[i, j, k].varValue) if j != i else 0 for j in myRange(n+1)] for i in myRange(n+1)]
+        [[int(X[i, j, k].value()) if j != i else 0 for j in myRange(n+1)] for i in myRange(n+1)]
     ))
 
 def printAssignments(Y, k):
     print(np.array(
-        [int(Y[i, k].varValue) for i in myRange(n)]
+        [int(Y[i, k].value()) for i in myRange(n)]
     ))
 
 print('SOLUTION:')
@@ -132,3 +172,54 @@ for k in myRange(m):
 
 print('\n')
 print(f'OBJECTIVE VALUE: {prob.objective.value()}')
+
+# ---- json conversion ----
+
+def getSolution(prob, X, n, m):
+    time = round(prob.solutionTime, 2)
+    if time >= 300:
+        time = 300
+        optimal = False
+    else:
+        optimal = True
+    obj = prob.objective.value()
+    sol = []
+    # create sol from grids
+    for k in myRange(m):
+        path = []        
+        if sum([X[n+1, i, k].value() for i in myRange(n)]) > 0: # check weather the currier has packages
+            current = n+1
+            dest = 0
+            path = []
+            while(dest != n+1):
+                dest = 1
+                while(current == dest or X[current, dest, k].value() != 1):
+                    dest += 1
+                if dest != n+1:
+                    path.append(dest)
+                    current = dest
+        sol.append(path)
+    return time, optimal, obj, sol
+
+def saveAsJson(instId, solveName, path='./res/MIP/'):
+    time, optimal, obj, sol = getSolution(prob, X, n, m)
+    filepath = path + str(instId) + '.json'
+    if os.path.isfile(filepath):
+        f = open(filepath)
+        json_sols = json.load(f)
+        f.close()
+        print("json loaded")
+        print(json_sols)
+    else:
+        json_sols = {}
+    json_sols[solveName] = {
+        "time": time,
+        "optimal": optimal,
+        "obj": obj,
+        "sol": sol
+    }
+    save_file = open(filepath, "w")
+    json.dump(json_sols, save_file)  
+    save_file.close()
+        
+saveAsJson(3, solv_arg)
