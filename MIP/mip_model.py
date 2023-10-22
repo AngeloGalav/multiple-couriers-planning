@@ -176,6 +176,7 @@ for k in myRange(m):
 print('\n')
 print(f'OBJECTIVE VALUE: {prob.objective.value()}')
 
+
 def getSolution(prob, X, n, m):
     time = round(prob.solutionTime, 2)
     if time >= 300:
@@ -202,4 +203,4 @@ def getSolution(prob, X, n, m):
         sol.append(path)
     return time, optimal, obj, sol
 
-saveAsJson(3, solverName, "./res/MIP", getSolution(prob, X, n, m))
+saveAsJson(3, solverName, "../res/MIP/", getSolution(prob, X, n, m))
