@@ -1,7 +1,10 @@
 import sys
 import re
+import json
+import os
 import math
 
+# example text
 input_text = """
 m = 3;
 n = 7;
@@ -93,6 +96,27 @@ def compute_bounds(D, m, n) :
     lower_b = sum(mins[:Q]) + mL + mR
     upper_b = sum([max(cols[i]) for i in range(n)]) # max for each row
     return lower_b, upper_b
+
+def saveAsJson(instId, solveName, path, solutionInfo):
+    time, optimal, obj, sol = solutionInfo
+    filepath = path + str(instId) + '.json'
+    if os.path.isfile(filepath):
+        f = open(filepath)
+        json_sols = json.load(f)
+        f.close()
+        print("json loaded")
+        print(json_sols)
+    else:
+        json_sols = {}
+    json_sols[solveName] = {
+        "time": time,
+        "optimal": optimal,
+        "obj": obj,
+        "sol": sol
+    }
+    save_file = open(filepath, "w")
+    json.dump(json_sols, save_file)
+    save_file.close()
 
 # Quick usage example
 m, n, _, _, D = get_values_from_dzn(input_text)
