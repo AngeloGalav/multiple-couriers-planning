@@ -97,9 +97,17 @@ def compute_bounds(D, m, n) :
     upper_b = sum([max(cols[i]) for i in range(n)]) # max for each row
     return lower_b, upper_b
 
-def saveAsJson(instId, solveName, path, solutionInfo):
-    time, optimal, obj, sol = solutionInfo
-    filepath = path + str(instId) + '.json'
+def saveAsJson(instanceName, solveName, path, solutionInfo):
+    time, obj, sol = solutionInfo
+    # optimality check
+    if time >= 300:
+        time = 300
+        optimal = False
+    else:
+        optimal = True
+
+    filepath = path + instanceName + '.json'
+    # putting info on file
     if os.path.isfile(filepath):
         f = open(filepath)
         json_sols = json.load(f)
@@ -114,6 +122,7 @@ def saveAsJson(instId, solveName, path, solutionInfo):
         "obj": obj,
         "sol": sol
     }
+    # saving file
     save_file = open(filepath, "w")
     json.dump(json_sols, save_file)
     save_file.close()

@@ -201,6 +201,6 @@ def getSolution(prob, X, n, m):
                     path.append(dest)
                     current = dest
         sol.append(path)
-    return time, optimal, obj, sol
+    return time, obj, sol
 
-saveAsJson(3, solverName, "../res/MIP/", getSolution(prob, X, n, m))
+saveAsJson("3", solverName, "../res/MIP/", getSolution(prob, X, n, m))
