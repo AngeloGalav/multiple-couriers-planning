@@ -32,5 +32,16 @@ def run_cp_instance(modelFile, solverName, dataFile) :
     saveAsJson(path.basename(dataFile).split('.')[0], solverName, "res/CP/",
                (total_time, result.solution.objective, result.solution.x))
 
+def modify_model_heuristics(modelFile, onCopy=True):
+    strategies = ["input_order", "first_fail", "smallest", "dom_w_deg"]
+    heuristics = ["indomain_min", "indomain_median", "indomain_random", "indomain_split"]
+
+    # works on the copy of a file, not directly on the model
+    if onCopy:
+        ...
+
+    # TODO: modify model and create new model file so that the heuristics are there
+
+
 # demo
 run_cp_instance("CP/model_3.1.mzn", "gecode", "instances/instance1.dzn")
