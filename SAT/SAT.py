@@ -1,7 +1,7 @@
 import z3
 import SATfunctions2 as SATf
 from scipy.optimize import minimize
-from math import log,ceil
+from math import log,floor
 
 def read_input_file(file_path):
     with open(file_path, 'r') as file:
@@ -45,8 +45,8 @@ def SAT_mcp(m, n, s, w, D):
     for i in range(m):
         solver.add(SATf.gte(sb[i],SATf.sum_b_list([SATf.enable(wb[j],SATf.eq(SATf.int2boolList(i+1),x[j])) for j in range(n)])))
         solver.add(SATf.gte(sb[0],SATf.sum_b_list([SATf.enable(wb[0],SATf.eq(SATf.int2boolList(i+1),x[0]))])))
-
-    #C2   a courier cannot deliver two items at the same time
+    
+    #C2   a courier cannot deliver two items at the same time  
     for i in range(n):
         for j in range(i+1,n):
             solver.add(z3.Or(SATf.ne(x[i],x[j]),SATf.ne(tour[i],tour[j])))
@@ -55,7 +55,7 @@ def SAT_mcp(m, n, s, w, D):
     lb = min(D[n])+min([D[i][n] for i in range(n+1)])
     ub = sum([max(D[i]) for i in range(n+1)])
     dist = [[] for _ in range(m)]    #list of distances of each courier
-    loss = [z3.Bool(f'loss_{j}') for j in range(ceil(log(ub,2)))]
+    loss = [z3.Bool(f'loss_{j}') for j in range(floor(log(ub,2))+1)]
     for i in range(m):
         dist[i]=SATf.sum_b_list([SATf.enable(Db[j][k],z3.And(SATf.eq(x[j],SATf.int2boolList(i+1)),SATf.eq(x[k],SATf.int2boolList(i+1)),SATf.eq(SATf.sum_b(x[j],[True]),x[k]))) for j in range(n) for k in range(n)])
         dist[i]=SATf.sum_b(dist[i],SATf.sum_b_list([SATf.enable(Db[n][j],z3.And(SATf.eq(SATf.int2boolList(i+1),x[j]),SATf.eq([True],tour[j]))) for j in range(n)]))
@@ -66,16 +66,19 @@ def SAT_mcp(m, n, s, w, D):
     solver.add(SATf.gte(loss,SATf.int2boolList(lb)))
     solver.add(SATf.gte(SATf.int2boolList(ub),loss))
 
-    if solver.check() == z3.sat:
-        model = solver.model()
-        print("Sat:")
-        print(model)
-    else:
-        print("Unsat")
+    while ub != lb:
+        mid = lb + (ub - lb)//2
+        print(f"Loss <= {mid}")
+        res = solver.check(SATf.lte(loss, SATf.int2boolList(mid)))
+        if res == z3.sat:
+            print(f"Sat")
+            ub = mid
+            bestModel = solver.model()
+        else:
+            print("Unsat")
+            lb = mid + 1
+        print()
 
-
-m,n,s,w,D = read_input_file('../instances/SAT_instance.txt')
+m,n,s,w,D = read_input_file('instance.txt')
 print(m,n,s,w,D)
 SAT_mcp(m, n, s, w, D)
-
-

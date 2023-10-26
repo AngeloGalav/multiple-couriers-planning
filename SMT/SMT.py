@@ -1,4 +1,4 @@
-from z3 import *
+import z3
 
 
 def read_input_file(file_path):
@@ -21,49 +21,63 @@ def read_input_file(file_path):
     return m, n, s, w, D
 
 
-def solve_multi_courier_problem(m, n, s, w, D):
+def SMT(m, n, s, w, D):
     # Inizializza il solver Z3
-    solver = Optimize()
+    solver = z3.Optimize()
 
-    x = [Int(f"x_{j}") for j in range(n)]
-    tour = [Int(f"tour_{j}") for j in range(n)]
-    #x = Array('x', IntSort(), IntSort()) #(declare-fun x () (Array Int Int))
-    #tour = Array('tour', IntSort(), IntSort()) #(declare-fun tour () (Array Int Int))
+    x = [[z3.Int(f"x_{j}_{i}") for i in range(1,1+n)] for j in range(1,1+m)]
+    tour = [z3.Int(f"tour_{j}") for j in range(1,1+n)]
 
     #Domains
     for i in range(n):
-        solver.add(x[i]>=1)
-        solver.add(x[i]<=m)
+        for j in range(m):
+            solver.add(z3.Or(x[j][i]==1,x[j][i]==0))
         solver.add(tour[i]>=1)
-        solver.add(tour[i] <= Sum([If(x[k]==x[i],1,0) for k in range(n)]))
+        solver.add(tour[i] <= z3.Sum([x[j][k]*x[j][i] for k in range(n) for j in range(m)]))
 
-    #C1
+    #C1 weight
     for i in range(m):
-        solver.add(s[i] >= Sum([If(x[j]==i,w[j],0) for j in range(n)]))
+        solver.add(s[i] >= z3.Sum([x[i][j]*w[j] for j in range(n)]))
 
-    #C2
-    for i in range(n):
-        for j in range(i + 1, n):  # Solo coppie con i != j
-            solver.add(Implies(x[i] == x[j], tour[i] != tour[j]))
+    #C2 different position
+    for k in range(m):
+        for i in range(n):
+            for j in range(i + 1, n):
+                solver.add(z3.Or(x[k][i]==0,x[k][j]==0, tour[i] != tour[j])) #se entrambi sono 1, allora tour sono diversi
 
-    #C3 is already written in the domain part
+    #C3 item delivered only once in x
+    for j in range(n):
+        solver.add(z3.Sum([x[i][j] for i in range(m)])==1)
 
     #loss
-    max_distance = Int('max_distance')
+    lb = min(D[n])+min([D[i][n] for i in range(n+1)])
+    ub = sum([max(D[i]) for i in range(n+1)])
+    max_distance = z3.Int('max_distance')
+    dist = [z3.Int(f"dist_{i}") for i in range(1,m+1)]    #list of distances of each courier
     for i in range(m):
-        distance = Int('distance')
-        distance = Sum([D[j][k] for j in range(n) for k in range(n) if (x[j]==i and x[k]==i and tour[k]-tour[j]==1)])
-        max_distance = If(max_distance<distance,distance, max_distance)
+        dist[i] = z3.Sum([D[j][k] for j in range(n) for k in range(n) if (x[i][j]==1 and x[i][k]==1 and tour[k]-tour[j]==1)]+[D[n][j] for j in range(n) if (tour[j]==1 and x[i][j]==1)]+[D[j][n] for j in range(n) if (tour[j]==z3.Sum([x[i][k] for k in range(n)]) and x[i][j]==1)])
+        #^LA LOSS NON FUNZIONA PER GLI if!!!!!!!!!!!!!!
+        solver.add(max_distance>=dist[i])
 
-    #solver.add(max_distance == Sum([If(tour[k] == D[n][n+1+k], D[k][k_next], 0) for k_next in range(n+1) for i in range(m)])+D[0][])
-    #solver.add(max_distance)
+    solver.add(z3.Or([max_distance==dist[i] for i in range(m)]))
+    solver.add(max_distance>=lb)
+    solver.add(max_distance<=ub)
+
     solver.minimize(max_distance)
 
-    if solver.check() == sat:
+    if solver.check() == z3.sat:
         model = solver.model()
-        print(Sum([If(x[j]==0,w[j],0) for j in range(n)]))
         print("Sat:")
-        print(model)
+        for i in range(m):
+            print([model[x[i][j]] for j in range(n)])
+        print()
+        print([model[tour[i]] for i in range(n)])
+        print()
+        print(model[max_distance])
+        print()
+        print([model[dist[i]] for i in range(m)])
+        print()
+        print(lb,ub)
     else:
         print("Unsat")
 
@@ -71,9 +85,9 @@ def solve_multi_courier_problem(m, n, s, w, D):
 
 # Test
 if __name__ == "__main__":
-    m,n,s,w,D = read_input_file('generated_unformatted_instance.txt')
+    m,n,s,w,D = read_input_file('c:/Users/utente/Desktop/cmdo project/multiple-couriers-planning/SMT/instance.txt')
     print(s,w,D)
-    result = solve_multi_courier_problem(m,n,s, w, D)
+    result = SMT(m,n,s, w, D)
     if result:
         assignments, max_distance = result
         print("Assegnamento dei corrieri ai pacchi:")
