@@ -50,6 +50,12 @@ def parse_instance() :
         print("no file given")
         return 0
 
+    m,n,l,s,D = actual_parse(filename)
+
+    # return m,n,l,s,D
+    print(m,n,l,s,D)
+
+def actual_parse(filename):
     f = open(filename, "r")
     m = int(f.readline())
     n = int(f.readline())
@@ -60,8 +66,7 @@ def parse_instance() :
     for i in range(n+1):
         row = list(map(int, f.readline().split()))
         D.append(row)
-
-    # return m,n,l,s,D
-    print(m,n,l,s,D)
+    
+    return m,n,l,s,D
 
 build_dzn()
