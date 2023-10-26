@@ -1,8 +1,8 @@
 from pulp import *
 import numpy as np
 import os.path
-from enum import Enum
 
+"""
 m = 3
 n = 7
 l = [15, 10, 7]
@@ -16,9 +16,10 @@ D = [[0, 3, 3, 6, 5, 6, 6, 2],
     [6, 7, 5, 6, 3, 2, 0, 4], 
     [2, 3, 3, 4, 3, 4, 4, 0]]
 LB = 4
-UB = 51
+UB = 36
 
 """
+
 m = 10
 n = 13
 l = [185, 190, 200, 180, 200, 190, 200, 180, 195, 190]
@@ -39,13 +40,25 @@ D =[[0,  21, 86,  14,  84,  72,  24, 54,  83,  70,  8,  91,  42,  57],
     [42, 57, 128, 29,  126, 90,  41, 65,  94,  72,  50, 91,  0,   99], 
     [57, 52, 33,  71,  27,  103, 60, 108, 114, 40,  49, 122, 99,  0]]
 
-LB = 27+27
-UB = 91+ 84+ 137+ 105+ 135+ 142+ 94+ 145+ 153+ 161+ 99+ 161+ 128+ 114
-"""
+LB = 27+27+8
+UB = 145+153+161+161
 
-# choose between one of the following solvers: cbc, glpk, scip
-solv_arg = 'glpk'
-time_limit = 20
+
+# --- ARGS ---
+solv_arg = 'highs' # choices: [cbc, glpk, scip, highs]
+time_limit = 300
+
+
+if solv_arg == 'glpk':
+    solver = GLPK_CMD(timeLimit=time_limit)
+elif solv_arg == 'cbc':
+    solver = PULP_CBC_CMD(timeLimit=time_limit)
+elif solv_arg == 'scip':
+    solver = SCIP_CMD(timeLimit=time_limit, keepFiles=True)
+elif solv_arg == 'highs':
+    solver = HiGHS_CMD(timeLimit=time_limit)
+else:
+    raise Exception("invalid solver argument")
 
 def cost(i, j):
     return D[i-1][j-1]
@@ -114,8 +127,10 @@ for k in myRange(m):
 
 # C4
 for k in myRange(m):
-    prob += lpSum([X[n+1, j, k] for j in myRange(n)]) <= 1
-    prob += lpSum([X[i, n+1, k] for i in myRange(n)]) <= 1
+    prob += lpSum([X[n+1, j, k] for j in myRange(n)]) == 1
+    prob += lpSum([X[i, n+1, k] for i in myRange(n)]) == 1
+
+    prob += lpSum([Y[i, k] for i in myRange(n)]) >= 1
 
 # C5
 for k in myRange(m):
@@ -140,16 +155,6 @@ for k in myRange(m):
 prob += MaxCost
 
 # ---- solve and visualization ----
-
-if solv_arg == 'glpk':
-    solver = GLPK_CMD(timeLimit=time_limit)
-elif solv_arg == 'cbc':
-    solver = PULP_CBC_CMD(timeLimit=time_limit)
-elif solv_arg == 'scip':
-    solver = SCIP_CMD(timeLimit=time_limit)
-else:
-    raise Exception("invalid solver argument")
-
 status = prob.solve(solver)
 
 def printTour(X, k):
@@ -161,6 +166,8 @@ def printAssignments(Y, k):
     print(np.array(
         [int(Y[i, k].value()) for i in myRange(n)]
     ))
+
+print(prob.variablesDict()['MaxCost'].value())
 
 print('SOLUTION:')
 for k in myRange(m):
@@ -177,8 +184,8 @@ print(f'OBJECTIVE VALUE: {prob.objective.value()}')
 
 def getSolution(prob, X, n, m):
     time = round(prob.solutionTime, 2)
-    if time >= 300:
-        time = 300
+    if time >= time_limit-1:
+        time = time_limit
         optimal = False
     else:
         optimal = True
@@ -222,4 +229,4 @@ def saveAsJson(instId, solveName, path='./res/MIP/'):
     json.dump(json_sols, save_file)  
     save_file.close()
         
-saveAsJson(3, solv_arg)
+saveAsJson(10, solv_arg)

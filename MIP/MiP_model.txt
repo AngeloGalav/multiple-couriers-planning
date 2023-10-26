@@ -26,8 +26,8 @@ C2: If a item's node is arrived to, or departed from by a vehicle k, then the it
 
 C3: Demand assigned to a courier has to be lower than its max capacity
 
-C4: each courier can leave the origin and return to it at most once (0 times if it has no items assigned)
-    Note -  the fact that each nonzero path starts and ends with n+1 is guaranteed by the fact that, thanks to C1, each node 1..n has to
+C4: each courier leaves the origin and returns it exactly once
+    Note -  the fact that each path starts and ends with n+1 is guaranteed by the fact that, thanks to C1, each node 1..n has to
 	    botth be arrived to and departed from, so a path has to start and end in n+1
 
 C5: Subtours aren't allowed (we need to eliminate the possibility of loops forming), using MTZ constraint
@@ -47,9 +47,12 @@ for each j in 1..n, for each k in 1..m: sum(i in 1..n+1){X[i, j, k]} = Y[j, k] /
 for each k in 1..m: sum(i in 1..n){s[i]*Y[i, k]} <= l[k]
 
 -- C4 --
-for each k in 1..m: sum(j in 1..n){X[n+1, j, k]} <= 1 //each courier can leave the origin at most once
+for each k in 1..m: sum(j in 1..n){X[n+1, j, k]} = 1 //each courier leaves the origin exactly once
+for each k in 1..m: sum(i in 1..n){X[i, n+1, k]} = 1 //each courier returns to the origin exactly once
 
-for each k in 1..m: sum(i in 1..n){X[i, n+1, k]} <= 1 //each courier can arrive at the origin at most once
+and / or
+
+for each k in 1..m sum(i in 1..n){Y[i, k]} >= 1 // each courier has atleast 1 item assigned
 
 -- C5 --
 for each k in 1..m, for each i in 1..n, for each j in 1..n (j != i): U[i] - U[j] + (n+1)*X[i, j, k] <= n
