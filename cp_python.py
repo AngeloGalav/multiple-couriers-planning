@@ -1,14 +1,16 @@
 from minizinc import *
+from os import path
 from dzn_handlers import compute_bounds, get_values_from_dzn
+from dzn_handlers import saveAsJson
 import time
 
-def run_cp_instance(model_file, solver_name, data_file) :
-    model = Model(model_file)
-    solver = Solver.lookup(solver_name)
-    model.add_file(data_file, parse_data=True)
+def run_cp_instance(modelFile, solverName, dataFile) :
+    model = Model(modelFile)
+    solver = Solver.lookup(solverName)
+    model.add_file(dataFile, parse_data=True)
     instance = Instance(solver=solver, model=model)
 
-    with open("instances/input.dzn") as f:
+    with open("instances/instance1.dzn") as f:
         input_data = f.read()
     print(input_data)
 
@@ -23,8 +25,23 @@ def run_cp_instance(model_file, solver_name, data_file) :
 
     total_time = end-start
 
-    print(result)
+    print(result.solution.x, result.solution.objective)
     print("Time:", total_time)
+
+    # save as json with instance name
+    saveAsJson(path.basename(dataFile).split('.')[0], solverName, "res/CP/",
+               (total_time, result.solution.objective, result.solution.x))
+
+def modify_model_heuristics(modelFile, onCopy=True):
+    strategies = ["input_order", "first_fail", "smallest", "dom_w_deg"]
+    heuristics = ["indomain_min", "indomain_median", "indomain_random", "indomain_split"]
+
+    # works on the copy of a file, not directly on the model
+    if onCopy:
+        ...
+
+    # TODO: modify model and create new model file so that the heuristics are there
+
 
 # demo
 run_cp_instance("CP/model_3.1.mzn", "gecode", "instances/instance1.dzn")
