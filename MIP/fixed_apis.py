@@ -179,12 +179,12 @@ class MY_SCIP_CMD(LpSolver_CMD):
             except Exception:
                 raise PulpSolverError("Can't get SCIP solver status: %r" % line)
 
-            status = SCIP_CMD.SCIP_STATUSES.get(
+            status = MY_SCIP_CMD.SCIP_STATUSES.get(
                 comps[1].strip(), constants.LpStatusUndefined
             )
             values = {}
 
-            if status in SCIP_CMD.NO_SOLUTION_STATUSES:
+            if status in MY_SCIP_CMD.NO_SOLUTION_STATUSES:
                 return status, values
 
             # Look for an objective value. If we can't find one, stop.

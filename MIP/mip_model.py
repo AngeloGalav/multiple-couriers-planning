@@ -5,6 +5,7 @@ from fixed_apis import MY_HiGHS_CMD, MY_SCIP_CMD
 sys.path.append('./')
 from dzn_handlers import saveAsJson, compute_bounds
 from mcp_input_parser import actual_parse
+from argparse import ArgumentParser
 
 """
 m = 3
@@ -49,9 +50,16 @@ UB = 145+153+161+161
 """
 
 # --- ARGS ---
-solv_arg = 'highs' # choices: [cbc, glpk, scip, highs]
-time_limit = 300
-instance = 3 # from 1 to 21
+parser = ArgumentParser()
+parser.add_argument("-s", "--solver", type=str, choices=['cbc', 'glpk', 'scip', 'highs'], default='cbc')
+parser.add_argument("-t", "--timelimit", type=int, default=300)
+parser.add_argument("-i", "--instance", type=int, default=3)
+
+args = parser.parse_args()._get_kwargs()
+
+solv_arg = args[0][1]
+time_limit = args[1][1]
+instance = args[2][1]
 
 inst_name = "inst"+str(instance).zfill(2)+".dat"
 m,n,l,s,D = actual_parse('./instances/'+inst_name)
