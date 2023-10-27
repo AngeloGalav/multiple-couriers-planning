@@ -28,6 +28,9 @@ The solution with the highest cost is a solution where all items are delivered b
 possible cost. If we have n nodes, the worst solution will have a cost <= than (M_1 + M_2 + ... + M_n + M_(n+1)), where M_i is the cost of the most costly
 edge arriving to node i [M_i = max(j in 1..n+1 where j!=i)(D[j, i])]
 
+Improvement (assumes each courier delivers at least one item):
+In this case the longest possible tour delivers n-m+1 items, so in departs and arrives at the origin, and travels from item to item n-m times. The worst solution will have a cost <= than (ML + MR + MC1 + ... + MCn-m), where ML and MR are the maximum costs to leave and return to the origin respectively. If M_i is the maximum cost of arrival to node i [M_i = max(j in 1..n+1 where j!=i)(D[j, i])], then MC1...MCn-m are the highest n-m M_i values.
+
 
 ### Keep in mind:
 - Cols are the prices of arriving to node i from all other nodes

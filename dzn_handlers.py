@@ -81,21 +81,31 @@ def build_dzn(f) :
     f = open(filename + ".dzn", "w")
     f.write(output)
 
-def compute_bounds(D, m, n) :
-    # computing the LB with Davide's method
+def lower_bound(D, m, n):
     Q = math.ceil(n/m)
     d = [[D[i][j] for j in range(n+1) if i != j] for i in range(n+1)]
     cols = [[D[j][i] for j in range(n+1) if i != j] for i in range(n+1)]
 
-    mL = min(d[-1]) # last row
-    mR = min([k[-1] for k in d]) # last column
+    mL = min([D[n][i] for i in range(n)]) # last row
+    mR = min([D[i][n] for i in range(n)]) # last column
 
-    mins = [min(cols[i]) for i in range(n)]
+    mins = [min(D[j][i] for j in range(n) if i!=j) for i in range(n)]
     mins.sort()
 
-    lower_b = sum(mins[:Q]) + mL + mR
-    upper_b = sum([max(cols[i]) for i in range(n)]) # max for each row
-    return lower_b, upper_b
+    return sum(mins[:Q-1]) + mL + mR
+
+def upper_bound(D, m, n):
+    Q = math.ceil(n-m+1)
+    ML = max([D[n][i] for i in range(n)]) # last row
+    MR = max([D[i][n] for i in range(n)]) # last column
+
+    maxes = [max(D[j][i] for j in range(n) if i!=j) for i in range(n)]
+    maxes.sort(reverse=True)
+
+    return sum(maxes[:Q-1]) + ML + MR
+
+def compute_bounds(D, m, n):
+    return lower_bound(D, m, n), upper_bound(D, m, n)
 
 def saveAsJson(instanceName, solveName, path, solutionInfo):
     time, obj, sol = solutionInfo
