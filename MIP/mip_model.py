@@ -1,10 +1,10 @@
 from pulp import *
 import numpy as np
-import os.path
 import sys
-sys.path.append('../')
-from dzn_handlers import saveAsJson
-from enum import Enum
+from fixed_apis import MY_HiGHS_CMD, MY_SCIP_CMD
+sys.path.append('./')
+from dzn_handlers import saveAsJson, compute_bounds
+from mcp_input_parser import actual_parse
 
 """
 m = 3
@@ -23,7 +23,7 @@ LB = 4
 UB = 36
 
 """
-
+"""
 m = 10
 n = 13
 l = [185, 190, 200, 180, 200, 190, 200, 180, 195, 190]
@@ -46,21 +46,29 @@ D =[[0,  21, 86,  14,  84,  72,  24, 54,  83,  70,  8,  91,  42,  57],
 
 LB = 27+27+8
 UB = 145+153+161+161
+"""
 
 # --- ARGS ---
 solv_arg = 'highs' # choices: [cbc, glpk, scip, highs]
 time_limit = 300
+instance = 3 # from 1 to 21
+
+inst_name = "inst"+str(instance).zfill(2)+".dat"
+m,n,l,s,D = actual_parse('./instances/'+inst_name)
+LB, UB = compute_bounds(D, m, n)
 
 if solv_arg == 'glpk':
     solver = GLPK_CMD(timeLimit=time_limit)
 elif solv_arg == 'cbc':
     solver = PULP_CBC_CMD(timeLimit=time_limit)
 elif solv_arg == 'scip':
-    solver = SCIP_CMD(timeLimit=time_limit, keepFiles=True)
+    solver = MY_SCIP_CMD(timeLimit=time_limit)
 elif solv_arg == 'highs':
-    solver = HiGHS_CMD(timeLimit=time_limit)
+    solver = MY_HiGHS_CMD(timeLimit=time_limit)
 else:
     raise Exception("invalid solver argument")
+
+
 
 def cost(i, j):
     return D[i-1][j-1]
@@ -132,8 +140,6 @@ for k in myRange(m):
     prob += lpSum([X[n+1, j, k] for j in myRange(n)]) == 1
     prob += lpSum([X[i, n+1, k] for i in myRange(n)]) == 1
 
-    prob += lpSum([Y[i, k] for i in myRange(n)]) >= 1
-
 # C5
 for k in myRange(m):
     for i in myRange(n):
@@ -159,6 +165,18 @@ prob += MaxCost
 # ---- solve and visualization ----
 status = prob.solve(solver)
 
+if solv_arg == 'glpk':
+    print(f"PROBLEM STATUS GLPK: {status}")
+elif solv_arg == 'cbc':
+    print(f"PROBLEM STATUS CBC: {status}")
+elif solv_arg == 'scip':
+    print(f"PROBLEM STATUS SCIP: {status}")
+elif solv_arg == 'highs':
+    print(f"PROBLEM STATUS HIGHS: {status}")
+else:
+    raise Exception("invalid solver argument")
+
+"""
 def printTour(X, k):
     print(np.array(
         [[int(X[i, j, k].value()) if j != i else 0 for j in myRange(n+1)] for i in myRange(n+1)]
@@ -181,32 +199,32 @@ for k in myRange(m):
 
 print('\n')
 print(f'OBJECTIVE VALUE: {prob.objective.value()}')
+"""
 
-
-def getSolution(prob, X, n, m):
+def getSolution(prob, status, X, n, m):
     time = round(prob.solutionTime, 2)
-    if time >= time_limit-1:
+    if time >= time_limit - 1:
         time = time_limit
-        optimal = False
+    if status != 1:
+        obj = 0
+        sol = "N/A"
     else:
-        optimal = True
-    obj = prob.objective.value()
-    sol = []
-    # create sol from grids
-    for k in myRange(m):
-        path = []
-        if sum([X[n+1, i, k].value() for i in myRange(n)]) > 0: # check weather the currier has packages
-            current = n+1
-            dest = 0
+        obj = prob.objective.value()
+        sol = []
+        for k in myRange(m):
             path = []
-            while(dest != n+1):
-                dest = 1
-                while(current == dest or X[current, dest, k].value() != 1):
-                    dest += 1
-                if dest != n+1:
-                    path.append(dest)
-                    current = dest
-        sol.append(path)
+            if sum([X[n+1, i, k].value() for i in myRange(n)]) > 0: # check weather the currier has packages
+                current = n+1
+                dest = 0
+                path = []
+                while(dest != n+1):
+                    dest = 1
+                    while(current == dest or X[current, dest, k].value() != 1):
+                        dest += 1
+                    if dest != n+1:
+                        path.append(dest)
+                        current = dest
+            sol.append(path)
     return time, obj, sol
 
-saveAsJson("3", solv_arg, "../res/MIP/", getSolution(prob, X, n, m))
+saveAsJson(str(instance), solv_arg, "./res/MIP/", getSolution(prob, status, X, n, m))
