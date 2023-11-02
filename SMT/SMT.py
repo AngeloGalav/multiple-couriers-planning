@@ -55,7 +55,7 @@ def SMT(m, n, s, w, D):
     max_distance = z3.Int('max_distance')
     dist = [z3.Int(f"dist_{i}") for i in range(1,m+1)]    #list of distances of each courier
     for i in range(m):
-        dist[i] = z3.Sum([D[j][k] for j in range(n) for k in range(n) if (x[i][j]==1 and x[i][k]==1 and tour[k]-tour[j]==1)]+[D[n][j] for j in range(n) if (tour[j]==1 and x[i][j]==1)]+[D[j][n] for j in range(n) if (tour[j]==z3.Sum([x[i][k] for k in range(n)]) and x[i][j]==1)])
+        dist[i] = z3.Sum([D[j][k]*x[i][j]*x[i][k] for j in range(n) for k in range(n) if (tour[k]-tour[j]==1)]+[D[n][j]*x[i][j] for j in range(n) if (tour[j]==1)]+[D[j][n]*x[i][j] for j in range(n) if (tour[j]==z3.Sum([x[i][k] for k in range(n)]))])
         #^LA LOSS NON FUNZIONA PER GLI if!!!!!!!!!!!!!!
         solver.add(max_distance>=dist[i])
 
@@ -85,7 +85,7 @@ def SMT(m, n, s, w, D):
 
 # Test
 if __name__ == "__main__":
-    m,n,s,w,D = read_input_file('c:/Users/utente/Desktop/cmdo project/multiple-couriers-planning/SMT/instance.txt')
+    m,n,s,w,D = read_input_file('C:/Users/utente/Desktop/cmdo project/multiple-couriers-planning/instances/SAT_instance.txt')
     print(s,w,D)
     result = SMT(m,n,s, w, D)
     if result:
