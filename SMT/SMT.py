@@ -85,7 +85,7 @@ def SMT(m, n, s, w, D):
 
 # Test
 if __name__ == "__main__":
-    m,n,s,w,D = read_input_file('C:/Users/utente/Desktop/cmdo project/multiple-couriers-planning/instances/SAT_instance.txt')
+    m,n,s,w,D = read_input_file('./instances/SAT_instance.txt')
     print(s,w,D)
     result = SMT(m,n,s, w, D)
     if result:
