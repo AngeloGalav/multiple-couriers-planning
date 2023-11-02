@@ -54,7 +54,7 @@ def SAT_mcp(m, n, s, w, D):
     loss = [z3.Bool(f'loss_{j}') for j in range(floor(log(ub,2))+1)]
     for i in range(m):
         dist[i] = SATf.sum_b_list([SATf.enable(Db[j1][j2],z3.And(X[i][j1][k-1],X[i][j2][k])) for j1 in range(n) for j2 in range(n) for k in range(1,n)])
-        dist[i] = SATf.sum_b_list(dist[i],SATf.sum_b_list([SATf.enable(Db[n+1][j],X[i][j][0]) for j in range(n)]))
+        dist[i] = SATf.sum_b(dist[i],SATf.sum_b_list([SATf.enable(Db[n][j],X[i][j][0]) for j in range(n)]))
         #manca da aggiungere la distanza delritorno all'origine
         solver.add(SATf.gte(loss,dist[i]))
     
