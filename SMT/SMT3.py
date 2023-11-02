@@ -75,7 +75,7 @@ def solve_multi_courier_problem(n, m, s, w, D):
 
 # Test
 if __name__ == "__main__":
-    n,m,s,w,D = read_input_file('generated_unformatted_instance.txt')
+    n,m,s,w,D = read_input_file('./instances/instance1_unformatted.txt')
     result = solve_multi_courier_problem(n,m,s, w, D)
 
     if result:

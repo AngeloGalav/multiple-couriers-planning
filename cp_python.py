@@ -10,7 +10,7 @@ def run_cp_instance(modelFile, solverName, dataFile) :
     model.add_file(dataFile, parse_data=True)
     instance = Instance(solver=solver, model=model)
 
-    with open("instances/instance1.dzn") as f:
+    with open("./instances/instance1.dzn") as f:
         input_data = f.read()
     print(input_data)
 
@@ -44,4 +44,4 @@ def modify_model_heuristics(modelFile, onCopy=True):
 
 
 # demo
-run_cp_instance("CP/model_3.1.mzn", "gecode", "instances/instance1.dzn")
+run_cp_instance("CP/model_3.1.mzn", "gecode", "./instances/instance1.dzn")
