@@ -1,0 +1,60 @@
+; Declare the integers
+(declare-const m Int)
+(declare-const n Int)
+(declare-const LB Int)
+(declare-const UB Int)
+(declare-const MaxCost Int)
+
+; Declare the arrays for X, Y, U, C, M, and M2
+(declare-const X (Array Int (Array Int (Array Int Bool))))
+(declare-const Y (Array Int (Array Int Bool)))
+(declare-const U (Array Int Int))
+(declare-const C (Array Int Int))
+(declare-const M (Array Int (Array Int Int)))
+(declare-const M2 (Array Int (Array Int (Array Int Int)))
+
+; Logical formulations
+; C1
+(forall ((i Int)) (and (and (<= 0 i) (< i n)) (exists ((j Int) (k Int)) (exactly-one (X i j k)))))
+(forall ((j Int)) (and (and (<= 0 j) (< j n)) (exists ((i Int) (k Int)) (exactly-one (X i j k))))
+
+; C2
+(forall ((i Int) (k Int)) (and (and (<= 0 i) (< i n)) (and (<= 0 k) (< k m)) (=
+    (=> (Y i k) (exists ((j Int)) (and (and (<= 0 j) (< j n)) (X i j k))))
+    (=> (exists ((j Int)) (and (and (<= 0 j) (< j n)) (X i j k)) (Y i k)))))
+(forall ((j Int) (k Int)) (and (and (<= 0 j) (< j n)) (and (<= 0 k) (< k m)) (=
+    (=> (Y j k) (exists ((i Int)) (and (and (<= 0 i) (< i n)) (X i j k))))
+    (=> (exists ((i Int)) (and (and (<= 0 i) (< i n)) (X i j k)) (Y j k))))
+
+; C3
+(forall ((k Int)) (and (and (<= 0 k) (< k m)) (<= (sum ((i Int)) (and (and (<= 0 i) (< i n)) (ite (Y i k) (M i k) 0))) (l k))))
+
+; C4
+(forall ((k Int)) (and (and (<= 0 k) (< k m)) (at-most-one ((j Int)) (and (and (<= 0 j) (< j n)) (X n j k))))
+(forall ((k Int)) (and (and (<= 0 k) (< k m)) (at-most-one ((i Int)) (and (and (<= 0 i) (< i n)) (X i n k))))
+
+; C5
+(forall ((k Int) (i Int) (j Int)) (and (and (and (<= 0 k) (< k m) (<= 0 i) (< i n) (<= 0 j) (< j n) (!= i j))
+    (=> (X i j k) (> (U j) (U i))))
+
+; Cost constraints
+(forall ((i Int) (j Int) (k Int)) (and (and (and (<= 0 i) (< i n) (<= 0 j) (< j n) (!= i j) (<= 0 k) (< k m))
+    (=> (X i j k) (= (M2 i j k) (D i j))))
+    (=> (! (X i j k)) (= (M2 i j k) 0)))
+
+(forall ((k Int)) (and (and (<= 0 k) (< k m))
+    (= (C k) (sum ((i Int) (j Int)) (and (and (<= 0 i) (< i n) (<= 0 j) (< j n) (!= i j)) (M2 i j k)))))
+    (>= MaxCost (C k)))
+
+; Domain constraints
+(forall ((i Int)) (and (and (<= 0 i) (< i n) (<= 1 (select U i)) (<= (select U i) n)))
+
+(>= MaxCost LB)
+(<= MaxCost UB)
+
+; Search for the minimum cost solution
+(push)
+(assert (<= MaxCost UB))
+(check-sat)
+(get-model)
+(pop)
