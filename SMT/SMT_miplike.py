@@ -4,6 +4,23 @@ import z3
 import numpy as np
 from z3 import And, Bool, Not, Xor, Or, Implies
 from itertools import combinations
+import sys
+sys.path.append('./')
+from dzn_handlers import saveAsJson, compute_bounds
+from argparse import ArgumentParser
+
+
+# --- ARGS ---
+parser = ArgumentParser()
+parser.add_argument("-t", "--timelimit", type=int, default=300)
+parser.add_argument("-i", "--instance", type=int, default=3)
+
+args = parser.parse_args()._get_kwargs()
+
+time_limit = args[1][1]
+instance = args[2][1]
+
+# --- instance data ---
 
 m = 3
 n = 7
@@ -19,6 +36,7 @@ D = [[0, 3, 3, 6, 5, 6, 6, 2],
     [2, 3, 3, 4, 3, 4, 4, 0]]
 LB = 8
 UB = 51
+
 
 def at_least_one_T(bools) -> z3.BoolRef:                                      
     return Or(bools)
@@ -175,16 +193,19 @@ solver.add(at_least_one_T([MaxCost==C[k] for k in range(m)]))
 # solver.add(sf.gte(MaxCost, sf.int2boolList(LB)))
 
 # -- solve and visualization --
-
 def printTour(model, k):
-    print(np.array(
+    x = np.array(
         [[1 if j != i and model[X[i, j, k]] else 0 for j in range(n+1)] for i in range(n+1)]
-    ))
+    )
+    print(x)
+    return x
 
 def printAssignments(model, k):
-    print(np.array(
+    x = np.array(
         [1 if model[Y[i, k]] else 0 for i in range(n)]
-    ))
+    )
+    print(x)
+    return x
 
 def print_cost_courier(model, k):
     print(f"Cost: {model[C[k]]}")
@@ -217,4 +238,7 @@ while high != low:
     print()
 
 print(f"final max cost: {high}")
-print_solution(bestModel)
+sol = print_solution(bestModel)
+
+
+saveAsJson("hardcoded", "SAT_miplike", "./res/SAT/", (time, obj, sol))
