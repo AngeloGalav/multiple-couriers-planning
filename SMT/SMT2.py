@@ -1,41 +1,30 @@
-from math import ceil, floor, log2
 import uuid
 import z3
 import numpy as np
-from z3 import And, Bool, Not, Xor, Or, Implies
+from z3 import And, Bool, Not, Or, Implies
 from itertools import combinations
 import sys
 sys.path.append('./')
 from dzn_handlers import saveAsJson, compute_bounds
+from mcp_input_parser import actual_parse
 from argparse import ArgumentParser
 
 
 # --- ARGS ---
 parser = ArgumentParser()
+parser.add_argument("-s", "--solver", type=str, choices=['Z3'], default='Z3')
 parser.add_argument("-t", "--timelimit", type=int, default=300)
 parser.add_argument("-i", "--instance", type=int, default=3)
 
 args = parser.parse_args()._get_kwargs()
 
+solv_arg = args[0][1]
 time_limit = args[1][1]
 instance = args[2][1]
 
-# --- instance data ---
-
-m = 3
-n = 7
-l = [15, 10, 7]
-s = [3, 2, 6, 8, 5, 4, 4]
-D = [[0, 3, 3, 6, 5, 6, 6, 2], 
-    [3, 0, 4, 3, 4, 7, 7, 3],
-    [3, 4, 0, 7, 6, 3, 5, 3],
-    [6, 3, 7, 0, 3, 6, 6, 4], 
-    [5, 4, 6, 3, 0, 3, 3, 3], 
-    [6, 7, 3, 6, 3, 0, 2, 4], 
-    [6, 7, 5, 6, 3, 2, 0, 4], 
-    [2, 3, 3, 4, 3, 4, 4, 0]]
-LB = 8
-UB = 51
+inst_name = "inst"+str(instance).zfill(2)+".dat"
+m,n,l,s,D = actual_parse('./instances/'+inst_name)
+high, low = compute_bounds(D, m, n)
 
 
 def at_least_one_T(bools) -> z3.BoolRef:                                      
@@ -188,11 +177,10 @@ for k in range(m):
     solver.add(C[k]==z3.Sum([M2[i,j,k] for i in range(n+1) for j in range(n+1) if i!=j]))
     solver.add(MaxCost>=C[k])
 solver.add(at_least_one_T([MaxCost==C[k] for k in range(m)]))
+solver.add(MaxCost>=low)
+solver.add(MaxCost<=high)
 
-### PROVARE
-# solver.add(sf.gte(MaxCost, sf.int2boolList(LB)))
-
-# -- solve and visualization --
+'''# -- solve and visualization --
 def printTour(model, k):
     x = np.array(
         [[1 if j != i and model[X[i, j, k]] else 0 for j in range(n+1)] for i in range(n+1)]
@@ -217,28 +205,51 @@ def print_solution(model):
         print()
         printAssignments(model, k)
         print_cost_courier(model, k)
-        print()
+        print()'''
 
-high = UB
-low = LB
 bestModel = None
 
 # binary search for the minimum cost solution
 while high != low:
     mid = low + (high - low)//2
-    print(f"trying MaxCost <= {mid}")
+    #print(f"trying MaxCost <= {mid}")
     res = solver.check(MaxCost<=mid)
     if res == z3.sat:
-        print(f"Sat")
+        #print(f"Sat")
         high = mid
         bestModel = solver.model()
     else:
-        print("Unsat")
+        #print("Unsat")
         low = mid + 1
-    print()
+    #print()
 
-print(f"final max cost: {high}")
-sol = print_solution(bestModel)
+#print(f"final max cost: {high}")
+#sol = print_solution(bestModel)
+
+def getSolution(solver, status, best, n, m):
+    time = round(solver.solutionTime, 2)
+    if time >= time_limit - 1:
+        time = time_limit
+    if status != 1:
+        obj = 0
+        sol = "N/A"
+    else:
+        obj = best[MaxCost]
+        sol = []
+        for k in range(m):
+            path = []
+            current = n+1
+            dest = 0
+            path = []
+            while(dest != n+1):
+                dest = 1
+                while(current == dest or best[X[current, dest, k]] != 1):
+                    dest += 1
+                if dest != n+1:
+                    path.append(dest)
+                    current = dest
+            sol.append(path)
+    return time, obj, sol
 
 
-saveAsJson("hardcoded", "SAT_miplike", "./res/SAT/", (time, obj, sol))
+saveAsJson(str(instance), solv_arg, "./res/SMT/", getSolution(solver, res, bestModel, n, m))
