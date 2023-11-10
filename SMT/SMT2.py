@@ -8,6 +8,7 @@ sys.path.append('./')
 from dzn_handlers import saveAsJson, compute_bounds
 from mcp_input_parser import actual_parse
 from argparse import ArgumentParser
+import time
 
 
 # --- ARGS ---
@@ -208,7 +209,7 @@ def print_solution(model):
         print()'''
 
 bestModel = None
-
+start_time = time.time()
 # binary search for the minimum cost solution
 while high != low:
     mid = low + (high - low)//2
@@ -225,11 +226,11 @@ while high != low:
 
 #print(f"final max cost: {high}")
 #sol = print_solution(bestModel)
+t = time.time() - start_time
 
-def getSolution(solver, status, best, n, m):
-    time = round(solver.solutionTime, 2)
-    if time >= time_limit - 1:
-        time = time_limit
+def getSolution(status, best, n, m):
+    if t >= time_limit - 1:
+        t = time_limit
     if status != 1:
         obj = 0
         sol = "N/A"
