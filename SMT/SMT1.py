@@ -49,6 +49,10 @@ def SMT(m, n, s, w, D):
     for j in range(n):
         solver.add(z3.Sum([x[i][j] for i in range(m)])==1)
 
+    #C4 no idle courier
+    for i in range(m):
+        solver.add(z3.Sum([x[i][j] for j in range(n)])>0)
+
     #loss
     lb = min(D[n])+min([D[i][n] for i in range(n+1)])
     ub = sum([max(D[i]) for i in range(n+1)])
