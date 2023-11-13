@@ -36,7 +36,12 @@ def modify_model_heuristics(modelFile, onCopy=True):
     strategies = ["input_order", "first_fail", "smallest", "dom_w_deg"]
     heuristics = ["indomain_min", "indomain_median", "indomain_random", "indomain_split"]
 
-    # works on the copy of a file, not directly on the model
+    # solve :: seq_search([
+    #          int_search(s, smallest, indomain_min),
+    #          int_search([end], input_order, indomain_min)])
+    #   minimize end
+
+    # works on the co   py of a file, not directly on the model
     if onCopy:
         ...
 
