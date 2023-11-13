@@ -1,24 +1,29 @@
 from math import ceil, floor, log2
-import uuid
 import z3
 import SATfunctions2 as sf
 import numpy as np
-from z3 import And, Bool, Not, Xor, Or, Implies
+from z3 import Bool, Implies
+import threading, time
+import sys
+sys.path.append('./')
+from dzn_handlers import saveAsJson, compute_bounds
+from mcp_input_parser import actual_parse
+from argparse import ArgumentParser
 
-m = 3
-n = 7
-l = [15, 10, 7]
-s = [3, 2, 6, 8, 5, 4, 4]
-D = [[0, 3, 3, 6, 5, 6, 6, 2], 
-    [3, 0, 4, 3, 4, 7, 7, 3],
-    [3, 4, 0, 7, 6, 3, 5, 3],
-    [6, 3, 7, 0, 3, 6, 6, 4], 
-    [5, 4, 6, 3, 0, 3, 3, 3], 
-    [6, 7, 3, 6, 3, 0, 2, 4], 
-    [6, 7, 5, 6, 3, 2, 0, 4], 
-    [2, 3, 3, 4, 3, 4, 4, 0]]
-LB = 8
-UB = 51
+parser = ArgumentParser()
+parser.add_argument("-t", "--timelimit", type=int, default=300)
+parser.add_argument("-i", "--instance", type=int, default=3)
+
+args = parser.parse_args()._get_kwargs()
+
+time_limit = args[0][1]
+instance = args[1][1]
+
+inst_name = "inst"+str(instance).zfill(2)+".dat"
+m,n,l,s,D = actual_parse('./instances/'+inst_name)
+LB, UB = compute_bounds(D, m, n)
+
+print("UB LB computed!")
 
 mb = sf.int2boolList(m)
 nb = sf.int2boolList(n)
@@ -56,9 +61,9 @@ Note: we use AtLeastOne instead of exactly one since C1 already ensures that a n
 for each k in 1..m: sum(i in 1..n){s[i]*Y[i, k]} <= l[k]
 
 -- C4 --
-for each k in 1..m: atMostOne(j in 1..n){X[n+1, j, k]} //each courier can leave the origin at most once
-
-for each k in 1..m: atMostOne(i in 1..n){X[i, n+1, k]} //each courier can arrive at the origin at most once
+for each k in 1..m: ExactlyOne(j in 1..n){X[n+1, j, k]} //each courier leaves the origin once
+for each k in 1..m: ExactlyOne(i in 1..n){X[i, n+1, k]} //each courier arrives at the origin once
+for each k in 1..m: AtleastOne(i in 1..n){Y[i, k]} // this is implied
 
 -- C5 --
 for each k in 1..m, for each i in 1..n, for each j in 1..n (j != i): X[i, j, k] -> GreaterThan(U[j], U[i])
@@ -136,8 +141,9 @@ for k in myRange(m):
 
 # C4
 for k in myRange(m):
-    solver.add(sf.at_most_one_T([X[n+1, j, k] for j in myRange(n)]))
-    solver.add(sf.at_most_one_T([X[i, n+1, k] for i in myRange(n)]))
+    solver.add(sf.exactly_one_T([X[n+1, j, k] for j in myRange(n)]))
+    solver.add(sf.exactly_one_T([X[i, n+1, k] for i in myRange(n)]))
+    solver.add(sf.at_least_one_T([Y[i, k] for i in myRange(n)]))
 
 # C5
 for k in myRange(m):
@@ -154,8 +160,7 @@ for k in myRange(m):
 
 solver.add(sf.max_elem([C[k] for k in myRange(m)], MaxCost))
 
-### PROVARE
-# solver.add(sf.gte(MaxCost, sf.int2boolList(LB)))
+solver.add(sf.gte(MaxCost, sf.int2boolList(LB)))
 
 # -- solve and visualization --
 
@@ -182,23 +187,72 @@ def print_solution(model):
         print_cost_courier(model, k)
         print()
 
-high = UB
-low = LB
-bestModel = None
+solver.check()
 
-# binary search for the minimum cost solution
-while high != low:
-    mid = low + (high - low)//2
-    print(f"trying MaxCost <= {mid}")
-    res = solver.check(sf.lte(MaxCost, sf.int2boolList(mid)))
-    if res == z3.sat:
-        print(f"Sat")
-        high = mid
-        bestModel = solver.model()
-    else:
-        print("Unsat")
-        low = mid + 1
-    print()
+model = None
 
-print(f"final max cost: {high}")
-print_solution(bestModel)
+print('Start!')
+start_time = time.time()
+def search():
+    global model
+    high = UB
+    low = LB
+    while high != low:
+        mid = low + (high - low)//2
+        print(f"trying MaxCost <= {mid}")
+        remaining_time = time_limit - (time.time()-start_time)
+        
+        solver.set("timeout", ceil(remaining_time)*1000)
+        res = solver.check(sf.lte(MaxCost, sf.int2boolList(mid)))
+        
+        if time_limit < (time.time()-start_time):
+            return
+
+        if res == z3.sat:
+            print(f"Sat")
+            high = mid
+            model = solver.model()
+        else:
+            print("Unsat")
+            low = mid + 1
+        print()
+
+search()
+
+print_solution(model)
+# t = threading.Thread(target=search)
+# start_time = time.time()
+# t.start()
+# t.join(time_limit)
+# if t.is_alive():
+#     t._stop()
+#     elapsed_time = time_limit
+# else:
+#     elapsed_time = round(time.time() - start_time, 2)
+# t.join()
+
+
+# def getSolution():
+#     if model is None:
+#         obj = 0
+#         sol = "N/A"
+#     else:
+#         mod = model
+#         obj = sf.bool2int([mod[MaxCost[i]] for i in range(len(MaxCost))])
+#         sol = []
+#         for k in myRange(m):
+#             path = []
+#             current = n+1
+#             dest = 0
+#             path = []
+#             while(dest != n+1):
+#                 dest = 1
+#                 while(current == dest or mod[X[current, dest, k]] == False):
+#                     dest += 1
+#                 if dest != n+1:
+#                     path.append(dest)
+#                     current = dest
+#             sol.append(path)
+#     return elapsed_time, obj, sol
+
+# print(getSolution())
