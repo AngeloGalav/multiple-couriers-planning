@@ -11,13 +11,7 @@ import sys
 '''
 Function that outputs a MiniZinc readable '.dzn' file
 '''
-def build_dzn() :
-    if len(sys.argv) > 1:
-        filename = sys.argv[1]
-    else:
-        print("no file given")
-        return 0
-
+def build_dzn(filename) :
     f = open(filename, "r")
     m = int(f.readline())
     n = int(f.readline())
@@ -66,4 +60,4 @@ def actual_parse(filename):
 
     return m,n,l,s,D
 
-build_dzn()
+# build_dzn()
