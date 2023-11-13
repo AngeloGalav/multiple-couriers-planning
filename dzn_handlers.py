@@ -49,7 +49,19 @@ def get_values_from_dzn(text):
 
     return integers['m'], integers['n'], lists['l'], lists['s'], D
 
-def build_dzn(f) :
+def get_values_from_text(f) :
+    m = int(f.readline())
+    n = int(f.readline())
+    l = list(map(int, f.readline().split()))
+    s = list(map(int, f.readline().split()))
+    D = []
+    for i in range(n+1):
+        row = list(map(int, f.readline().split()))
+        D.append(row)
+    return m, n, l, s, D
+
+
+def build_dzn(m, n, l, s, D) :
     '''
     Parses a file given as input and returns the contents as python variables.
     '''
@@ -59,12 +71,6 @@ def build_dzn(f) :
     #     print("no file given")
     #     return 0
     # f = open(filename, "r")
-
-    m = int(f.readline())
-    n = int(f.readline())
-    l = list(map(int, f.readline().split()))
-    s = list(map(int, f.readline().split()))
-    D = []
     for i in range(n+1):
         row = list(map(int, f.readline().split()))
         D.append(row)
