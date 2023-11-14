@@ -1,14 +1,14 @@
 from math import ceil, floor, log2
 import z3
+from z3 import Bool, Implies
 import SATfunctions2 as sf
 import numpy as np
-from z3 import Bool, Implies
-import threading, time
-import sys
+import time, sys
+from argparse import ArgumentParser
 sys.path.append('./')
 from dzn_handlers import saveAsJson, compute_bounds
 from mcp_input_parser import actual_parse
-from argparse import ArgumentParser
+
 
 parser = ArgumentParser()
 parser.add_argument("-t", "--timelimit", type=int, default=300)
@@ -187,12 +187,6 @@ def print_solution(model):
         print_cost_courier(model, k)
         print()
 
-solver.check()
-
-model = None
-
-print('Start!')
-start_time = time.time()
 def search():
     global model
     high = UB
@@ -216,43 +210,34 @@ def search():
             print("Unsat")
             low = mid + 1
         print()
+    return model
 
-search()
+print('Start!')
+start_time = time.time()
+model = search()
+elapsed = round(time.time()-start_time, 2)
 
-print_solution(model)
-# t = threading.Thread(target=search)
-# start_time = time.time()
-# t.start()
-# t.join(time_limit)
-# if t.is_alive():
-#     t._stop()
-#     elapsed_time = time_limit
-# else:
-#     elapsed_time = round(time.time() - start_time, 2)
-# t.join()
+def getSolution():
+    if model is None:
+        obj = 0
+        sol = "N/A"
+    else:
+        mod = model
+        obj = sf.bool2int([mod[MaxCost[i]] for i in range(len(MaxCost))])
+        sol = []
+        for k in myRange(m):
+            path = []
+            current = n+1
+            dest = 0
+            path = []
+            while(dest != n+1):
+                dest = 1
+                while(current == dest or mod[X[current, dest, k]] == False):
+                    dest += 1
+                if dest != n+1:
+                    path.append(dest)
+                    current = dest
+            sol.append(path)
+    return elapsed, obj, sol
 
-
-# def getSolution():
-#     if model is None:
-#         obj = 0
-#         sol = "N/A"
-#     else:
-#         mod = model
-#         obj = sf.bool2int([mod[MaxCost[i]] for i in range(len(MaxCost))])
-#         sol = []
-#         for k in myRange(m):
-#             path = []
-#             current = n+1
-#             dest = 0
-#             path = []
-#             while(dest != n+1):
-#                 dest = 1
-#                 while(current == dest or mod[X[current, dest, k]] == False):
-#                     dest += 1
-#                 if dest != n+1:
-#                     path.append(dest)
-#                     current = dest
-#             sol.append(path)
-#     return elapsed_time, obj, sol
-
-# print(getSolution())
+saveAsJson(str(instance), "miplike", "./res/SAT/", getSolution())
