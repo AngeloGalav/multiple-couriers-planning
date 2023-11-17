@@ -1,6 +1,6 @@
 from math import ceil, floor, log2
 import z3
-from z3 import Bool, Implies
+from z3 import Bool, Implies, Not
 import SATfunctions2 as sf
 import numpy as np
 import time, sys
@@ -69,7 +69,16 @@ for each k in 1..m: AtleastOne(i in 1..n){Y[i, k]} // this is implied
 for each k in 1..m, for each i in 1..n, for each j in 1..n (j != i): X[i, j, k] -> GreaterThan(U[j], U[i])
 
 -- cost constraints --
-for each k in 1..m: C[k] = sum(i in 1..n+1){sum(j in 1..n+1){D[i, j]*X[i, j, k]}}
+// we create auxiliary variables we call 'accumulators' that contain the costs of the single arc costs of courier paths
+StartAcc[k] contains the cost of the first step taken by courier k (cost to leave the origin)
+DepAcc[i, k] contains the cost of the departure from node i for courier k, and it is 0 if courier k isn't assigned to such item
+
+for each k in 1..m, for each j in 1..n: X[n+1, j, k] -> StartCost[k] = D[i, j]
+for each k in 1..m, for each i in 1..n: Not(Y[i, k]) -> DepCost[i, k] = 0
+for each k in 1..m, for each 1 in 1..n, for each j in 1..n+1 (j != i): X[i, j, k] -> DepCost[i, k] = D[i, j]
+
+for each k in 1..m: C[k] = sum(i in 1..n)(DepCost[i, k])+StartCost[k]
+
 is_max(MaxCost, C[k] for k in 1..m)
 
 -- domain constraints --
@@ -83,7 +92,7 @@ functioning of C5 (since the encodings are always non negative and a bound is gi
 we don't do it in SAT, since it saves the solver some additional constraints (as opposed to mip where having
  bounds is neccessary and the stricter the domains the easier the search)
 
-2_ foe MaxCost we set [MaxCost <= UB] as an assertion during binary search
+2_ for MaxCost we set [MaxCost <= UB] as an assertion during binary search
 
 3_ need to test weather [LB <= MaxCost] is a useful constraint for speeding up the solver or not (we still
 use LB in the binary search)
@@ -96,6 +105,8 @@ X={}
 Y={}
 U={}
 C={}
+StartCost={}
+DepCost={}
 MaxCost = [Bool(f"MaxCost[{i}]") for i in range(floor(log2(UB))+1)]
 
 for i in myRange(n+1):
@@ -114,6 +125,10 @@ for i in myRange(n):
 for k in myRange(m):
     C[k] = [Bool(f"C_{k}[{q}]") for q in range(floor(log2(UB))+1)]
 
+for k in myRange(m):
+    StartCost[k] = [Bool(f"StartCost_{k}[{q}]") for q in range(max([len(Db[n][j]) for j in range(n)]))]
+    for i in myRange(n):
+        DepCost[i, k] = [Bool(f"ArrCost_{i},{k}[{q}]") for q in range(max([len(Db[i][j]) for j in range(n+1)]))]
 
 # constraints declaration
 
@@ -153,10 +168,20 @@ for k in myRange(m):
                 solver.add(Implies(X[i, j, k], sf.gt(U[j], U[i])))
 
 # cost constraints
-costs_b = [cost(i, j) for i in myRange(n+1) for j in myRange(n+1) if i != j]
+
 for k in myRange(m):
-    mask = [X[i, j, k] for i in myRange(n+1) for j in myRange(n+1) if i != j]
-    solver.add(sf.eq(C[k], sf.masked_sum_n(costs_b, mask)))
+    for j in myRange(n):
+        solver.add(Implies(X[n+1, j, k], sf.eq(cost(n+1, j), StartCost[k])))
+
+for k in myRange(m):
+    for i in myRange(n):
+        solver.add(Implies(Not(Y[i, k]), sf.all_F(DepCost[i, k])))
+        for j in myRange(n+1):
+            if i != j:
+                solver.add(Implies(X[i, j, k], sf.eq(cost(i, j), DepCost[i, k])))
+
+for k in myRange(m):
+    solver.add(sf.eq(C[k], sf.sum_b_list([DepCost[i, k] for i in myRange(n)]+[StartCost[k]])))
 
 solver.add(sf.max_elem([C[k] for k in myRange(m)], MaxCost))
 
@@ -185,7 +210,20 @@ def print_solution(model):
         print()
         printAssignments(model, k)
         print_cost_courier(model, k)
+        print_accs(k)
         print()
+
+def print_costs():
+    print(np.array(
+        [[D[i][j] for j in range(n+1)] for i in range(n+1)]
+    ))
+    print()
+
+def print_accs(k):
+    sc = [model[StartCost[k][i]] for i in range(len(StartCost[k]))]
+    print(f"Start cost acc: {sf.bool2int(sc)}")
+    dc = [sf.bool2int([model[DepCost[i, k][q]] for q in range(len(DepCost[i, k]))]) for i in myRange(n)]
+    print(f"Departure cost accs: {dc}")
 
 def search():
     model = None
@@ -240,4 +278,8 @@ def getSolution():
             sol.append(path)
     return elapsed, obj, sol
 
-saveAsJson(str(instance), "miplike", "./res/SAT/", getSolution())
+saveAsJson(str(instance), "miplike_acc", "./res/SAT/", getSolution())
+
+print_costs()
+print_solution(model)
+
