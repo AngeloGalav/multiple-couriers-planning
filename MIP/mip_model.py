@@ -3,8 +3,7 @@ import numpy as np
 import sys
 from fixed_apis import MY_HiGHS_CMD, MY_SCIP_CMD
 sys.path.append('./')
-from dzn_handlers import saveAsJson, compute_bounds
-from mcp_input_parser import actual_parse
+from data_handlers import saveAsJson, computeBounds, parseInstance
 from argparse import ArgumentParser
 
 """
@@ -62,8 +61,8 @@ time_limit = args[1][1]
 instance = args[2][1]
 
 inst_name = "inst"+str(instance).zfill(2)+".dat"
-m,n,l,s,D = actual_parse('./instances/'+inst_name)
-LB, UB = compute_bounds(D, m, n)
+m,n,l,s,D = parseInstance('./instances/'+inst_name)
+LB, UB = computeBounds(D, m, n)
 
 if solv_arg == 'glpk':
     solver = GLPK_CMD(timeLimit=time_limit)

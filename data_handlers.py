@@ -49,18 +49,6 @@ def get_values_from_dzn(text):
 
     return integers['m'], integers['n'], lists['l'], lists['s'], D
 
-def get_values_from_text(f) :
-    m = int(f.readline())
-    n = int(f.readline())
-    l = list(map(int, f.readline().split()))
-    s = list(map(int, f.readline().split()))
-    D = []
-    for i in range(n+1):
-        row = list(map(int, f.readline().split()))
-        D.append(row)
-    return m, n, l, s, D
-
-
 def build_dzn(m, n, l, s, D) :
     '''
     Parses a file given as input and returns the contents as python variables.
@@ -87,6 +75,20 @@ def build_dzn(m, n, l, s, D) :
     f = open(filename + ".dzn", "w")
     f.write(output)
 
+def parseInstance(filename):
+    f = open(filename, "r")
+    m = int(f.readline())
+    n = int(f.readline())
+    l = list(map(int, f.readline().split()))
+    s = list(map(int, f.readline().split()))
+    D = []
+
+    for i in range(n+1):
+        row = list(map(int, f.readline().split()))
+        D.append(row)
+
+    return m,n,l,s,D
+
 def lower_bound(D, m, n):
     Q = math.ceil(n/m)
     d = [[D[i][j] for j in range(n+1) if i != j] for i in range(n+1)]
@@ -110,7 +112,7 @@ def upper_bound(D, m, n):
 
     return sum(maxes[:Q-1]) + ML + MR
 
-def compute_bounds(D, m, n):
+def computeBounds(D, m, n):
     return lower_bound(D, m, n), upper_bound(D, m, n)
 
 def saveAsJson(instanceName, solveName, path, solutionInfo):
@@ -145,4 +147,4 @@ def saveAsJson(instanceName, solveName, path, solutionInfo):
 
 # Quick usage example
 #m, n, _, _, D = get_values_from_dzn(input_text)
-#print(compute_bounds(D, m, n))
+#print(computeBounds(D, m, n))

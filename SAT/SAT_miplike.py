@@ -6,8 +6,7 @@ import numpy as np
 import time, sys
 from argparse import ArgumentParser
 sys.path.append('./')
-from dzn_handlers import saveAsJson, compute_bounds
-from mcp_input_parser import actual_parse
+from data_handlers import saveAsJson, computeBounds, parseInstance
 
 
 parser = ArgumentParser()
@@ -20,8 +19,8 @@ time_limit = args[0][1]
 instance = args[1][1]
 
 inst_name = "inst"+str(instance).zfill(2)+".dat"
-m,n,l,s,D = actual_parse('./instances/'+inst_name)
-LB, UB = compute_bounds(D, m, n)
+m,n,l,s,D = parseInstance('./instances/'+inst_name)
+LB, UB = computeBounds(D, m, n)
 
 print("UB LB computed!")
 
