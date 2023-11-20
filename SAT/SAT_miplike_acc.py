@@ -109,7 +109,7 @@ for k in myRange(m):
 for k in myRange(m):
     StartCost[k] = [Bool(f"StartCost_{k}[{q}]") for q in range(max([len(Db[n][j]) for j in range(n)]))]
     for i in myRange(n):
-        DepCost[i, k] = [Bool(f"ArrCost_{i},{k}[{q}]") for q in range(max([len(Db[i][j]) for j in range(n+1)]))]
+        DepCost[i, k] = [Bool(f"DepCost_{i},{k}[{q}]") for q in range(max([len(Db[i][j]) for j in range(n+1)]))]
 
 # constraints declaration
 
@@ -165,7 +165,6 @@ for k in myRange(m):
     solver.add(sf.eq(C[k], sf.sum_b_list([DepCost[i, k] for i in myRange(n)]+[StartCost[k]])))
 
 solver.add(sf.max_elem([C[k] for k in myRange(m)], MaxCost))
-
 solver.add(sf.gte(MaxCost, sf.int2boolList(LB)))
 
 # -- solve and visualization --
