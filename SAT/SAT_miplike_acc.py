@@ -81,6 +81,8 @@ use LB in the binary search)
 
 solver = z3.Solver()
 
+startt = time.time()
+
 # variable declarations (indexing starts from 1)
 X={}
 Y={}
@@ -111,14 +113,19 @@ for k in myRange(m):
     for i in myRange(n):
         DepCost[i, k] = [Bool(f"DepCost_{i},{k}[{q}]") for q in range(max([len(Db[i][j]) for j in range(n+1)]))]
 
+print(f"Time for vars declaration: {time.time() - startt}")
+
 # constraints declaration
 
+startt = time.time()
 # C1
 for i in myRange(n):
     solver.add(sf.exactly_one_T([X[i, j, k] for j in myRange(n+1) if i != j for k in myRange(m)]))
 
 for j in myRange(n):
     solver.add(sf.exactly_one_T([X[i, j, k] for i in myRange(n+1) if i != j for k in myRange(m)]))
+
+print(f"time for c1 {time.time() - startt}")
 
 # C2
 for i in myRange(n):
@@ -205,38 +212,7 @@ def print_accs(k):
     dc = [sf.bool2int([model[DepCost[i, k][q]] for q in range(len(DepCost[i, k]))]) for i in myRange(n)]
     print(f"Departure cost accs: {dc}")
 
-def search():
-    model = None
-    high = UB
-    low = LB
-    while high != low:
-        mid = low + (high - low)//2
-        if verbose:
-            print(f"trying MaxCost <= {mid}")
-        remaining_time = time_limit - (time.time()-start_time)
-        
-        solver.set("timeout", ceil(remaining_time)*1000)
-        res = solver.check(sf.lte(MaxCost, sf.int2boolList(mid)))
-        
-        if time_limit < (time.time()-start_time):
-            return
-
-        if res == z3.sat:
-            if verbose:
-                print(f"Sat\n")
-            high = mid
-            model = solver.model()
-        else:
-            if verbose:
-                print("Unsat\n")
-            low = mid + 1
-    return model
-
-if verbose:
-    print('Start!')
-start_time = time.time()
-model = search()
-elapsed = round(time.time()-start_time, 2)
+model, search_time = seqential_search(UB, LB, MaxCost, solver, time_limit, verbose)
 
 def getSolution():
     if model is None:
@@ -259,7 +235,7 @@ def getSolution():
                     path.append(dest)
                     current = dest
             sol.append(path)
-    return elapsed, obj, sol
+    return search_time, obj, sol
 
 save_solution(instance, name, getSolution())
 
