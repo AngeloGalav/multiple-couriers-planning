@@ -4,31 +4,15 @@ from z3 import Bool, Implies, Not
 import SATfunctions2 as sf
 import numpy as np
 import time, sys
-from argparse import ArgumentParser
+from sat_utils import *
 sys.path.append('./')
-from data_handlers import saveAsJson, computeBounds, parseInstance
+from data_handlers import saveAsJson
 
+name = "miplike_acc"
 
-parser = ArgumentParser()
-parser.add_argument("-t", "--timelimit", type=int, default=300)
-parser.add_argument("-i", "--instance", type=int, default=3)
-
-args = parser.parse_args()._get_kwargs()
-
-time_limit = args[0][1]
-instance = args[1][1]
-
-inst_name = "inst"+str(instance).zfill(2)+".dat"
-m,n,l,s,D = parseInstance('./instances/'+inst_name)
-LB, UB = computeBounds(D, m, n)
-
-print("UB LB computed!")
-
-mb = sf.int2boolList(m)
-nb = sf.int2boolList(n)
-lb = [sf.int2boolList(l[i]) for i in range(m)]
-sb = [sf.int2boolList(s[i]) for i in range(n)]
-Db = [[sf.int2boolList(D[i][j]) for j in range(n+1)] for i in range(n+1)]
+time_limit, instance = get_args()
+m,n,l,s,D,LB,UB = get_input(instance)
+mb, nb, lb, sb, Db = binarize_input(m, n, l, s, D)
 
 def cost(i, j):
     return Db[i-1][j-1]
@@ -277,7 +261,7 @@ def getSolution():
             sol.append(path)
     return elapsed, obj, sol
 
-saveAsJson(str(instance), "miplike_acc", "./res/SAT/", getSolution())
+save_solution(instance, name, getSolution())
 
 print_costs()
 print_solution(model)
