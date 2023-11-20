@@ -8,7 +8,7 @@ from sat_utils import *
 
 name = "miplike_acc"
 
-time_limit, instance = get_args()
+time_limit, instance, verbose = get_args()
 m,n,l,s,D,LB,UB = get_input(instance)
 mb, nb, lb, sb, Db = binarize_input(m, n, l, s, D)
 
@@ -212,7 +212,8 @@ def search():
     low = LB
     while high != low:
         mid = low + (high - low)//2
-        print(f"trying MaxCost <= {mid}")
+        if verbose:
+            print(f"trying MaxCost <= {mid}")
         remaining_time = time_limit - (time.time()-start_time)
         
         solver.set("timeout", ceil(remaining_time)*1000)
@@ -222,16 +223,18 @@ def search():
             return
 
         if res == z3.sat:
-            print(f"Sat")
+            if verbose:
+                print(f"Sat\n")
             high = mid
             model = solver.model()
         else:
-            print("Unsat")
+            if verbose:
+                print("Unsat\n")
             low = mid + 1
-        print()
     return model
 
-print('Start!')
+if verbose:
+    print('Start!')
 start_time = time.time()
 model = search()
 elapsed = round(time.time()-start_time, 2)
@@ -261,6 +264,7 @@ def getSolution():
 
 save_solution(instance, name, getSolution())
 
-print_costs()
-print_solution(model)
+if verbose:
+    print_costs()
+    print_solution(model)
 

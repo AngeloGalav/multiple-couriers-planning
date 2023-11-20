@@ -130,8 +130,6 @@ def saveAsJson(instanceName, solveName, path, solutionInfo):
         f = open(filepath)
         json_sols = json.load(f)
         f.close()
-        print("json loaded")
-        print(json_sols)
     else:
         json_sols = {}
     json_sols[solveName] = {
