@@ -1,6 +1,7 @@
+from itertools import combinations
 from math import ceil, floor, log2
 import z3
-from z3 import Bool, Implies, Not
+from z3 import Bool, Implies, Not, And
 import SATfunctions2 as sf
 import numpy as np
 import time
@@ -12,39 +13,28 @@ time_limit, instance, verbose = get_args()
 m,n,l,s,D,LB,UB = get_input(instance)
 mb, nb, lb, sb, Db = binarize_input(m, n, l, s, D)
 
-def cost(i, j):
-    return Db[i-1][j-1]
-
-def size(i):
-    return sb[i-1]
-
-def maxload(k):
-    return lb[k-1]
-
-def myRange(r):
-    return range(1, r+1)
-
 '''
 Logical formulations:
 -- C1 --
-for each i in 1..n: ExactlyOne(k in 1..m, j in 1..n+1){X[i, j, k]} //each node has to be departed from once
+for each i in 1..n: AtLeastOnce(k in 1..m, j in 1..n+1){X[i, j, k]} //each node has to be departed from atleast once
 
-for each j in 1..n: ExactlyOne(k in 1..m, i in 1..n+1){X[i, j, k]} //each node has to be arrived to once
+for each j in 1..n: AtLeastOnce(k in 1..m, i in 1..n+1){X[i, j, k]} //each node has to be arrived to atleast once
 
 -- C2 --
 for each i in 1..n, for each k in 1..m: Y[i, k] <-> AtLeastOne(j in 1..n+1){X[i, j, k]} //courier k departs from node i <--> item i is assigned to k
-
 for each j in 1..n, for each k in 1..m: Y[j, k] <-> AtLeastOne(i in 1..n+1){X[i, j, k]} //courier k arrives at node j <--> item j is assigned to k
 
-Note: we use AtLeastOne instead of exactly one since C1 already ensures that a node is arrived to exactly once.  
+-- C2.5 --
+each item is assigned to exactly one courier
+
+for each i in 1..n: ExaxtlyOne(k in 1..m){Y[i, k]}
 
 -- C3 --
 for each k in 1..m: sum(i in 1..n){s[i]*Y[i, k]} <= l[k]
 
 -- C4 --
-for each k in 1..m: ExactlyOne(j in 1..n){X[n+1, j, k]} //each courier leaves the origin once
-for each k in 1..m: ExactlyOne(i in 1..n){X[i, n+1, k]} //each courier arrives at the origin once
-for each k in 1..m: AtleastOne(i in 1..n){Y[i, k]} // this is implied
+for each k in 1..m: AtMostOne(j in 1..n){X[n+1, j, k]} //each courier leaves the origin once
+for each k in 1..m: AtMostOne(i in 1..n){X[i, n+1, k]} //each courier arrives at the origin once
 
 -- C5 --
 for each k in 1..m, for each i in 1..n, for each j in 1..n (j != i): X[i, j, k] -> GreaterThan(U[j], U[i])
@@ -81,109 +71,99 @@ use LB in the binary search)
 
 solver = z3.Solver()
 
-startt = time.time()
-
-# variable declarations (indexing starts from 1)
-X={}
-Y={}
-U={}
-C={}
-StartCost={}
-DepCost={}
-MaxCost = [Bool(f"MaxCost[{i}]") for i in range(floor(log2(UB))+1)]
-
-for i in myRange(n+1):
-    for j in myRange(n+1):
-        for k in myRange(m):
-            if i!=j:
-                X[i, j, k] = Bool(f"X_{i},{j},{k}")
-
-for i in myRange(n):
-    for k in myRange(m):
-        Y[i, k] = Bool(f"Y_{i},{k}")
-
-for i in myRange(n):
-    U[i] = [Bool(f"U_{i}[{q}]") for q in range(floor(log2(n))+1)]
-
-for k in myRange(m):
-    C[k] = [Bool(f"C_{k}[{q}]") for q in range(floor(log2(UB))+1)]
-
-for k in myRange(m):
-    StartCost[k] = [Bool(f"StartCost_{k}[{q}]") for q in range(max([len(Db[n][j]) for j in range(n)]))]
-    for i in myRange(n):
-        DepCost[i, k] = [Bool(f"DepCost_{i},{k}[{q}]") for q in range(max([len(Db[i][j]) for j in range(n+1)]))]
-
-print(f"Time for vars declaration: {time.time() - startt}")
+# variable declarations
+X = [[[Bool(f"X_{k},{i},{j}") if i != j else None for j in range(n+1)] for i in range(n+1)] for k in range(m)]
+Y = [[Bool(f"Y_{k},{i}") for i in range(n)]for k in range(m)]
+U = [[Bool(f"U_{i}[{q}]") for q in range(floor(log2(n))+1)] for i in range(n)]
+C = [[Bool(f"C_{k}[{q}]") for q in range(floor(log2(UB))+1)] for k in range(m)]
+StartCost = [[Bool(f"StartCost_{k}[{q}]") for q in range(max([len(Db[n][j]) for j in range(n)]))] for k in range(m)]
+DepCost = [[[Bool(f"DepCost_{k},{i}[{q}]") for q in range(max([len(Db[i][j]) for j in range(n+1)]))] for i in range(n)] for k in range(m)]
+MaxCost = [Bool(f"MaxCost[{q}]") for q in range(floor(log2(UB))+1)]
 
 # constraints declaration
 
-startt = time.time()
 # C1
-for i in myRange(n):
-    solver.add(sf.exactly_one_T([X[i, j, k] for j in myRange(n+1) if i != j for k in myRange(m)]))
+for i in range(n):
+    solver.add(sf.at_least_one_T([X[k][i][j] for j in range(n+1) if i != j for k in range(m)]))
+    solver.add(sf.at_least_one_T([X[k][j][i] for j in range(n+1) if i != j for k in range(m)]))
+    for k in range(m):
+        solver.add(sf.at_most_one_T([X[k][j][i] for j in range(n+1) if i != j]))
 
-for j in myRange(n):
-    solver.add(sf.exactly_one_T([X[i, j, k] for i in myRange(n+1) if i != j for k in myRange(m)]))
-
-print(f"time for c1 {time.time() - startt}")
+if verbose:
+    print(f"constraint C1 added")
 
 # C2
-for i in myRange(n):
-    for k in myRange(m):
-        solver.add(Y[i, k] == sf.at_least_one_T([X[i, j, k] for j in myRange(n+1) if i != j]))
+for i in range(n):
+    for k in range(m):
+        solver.add(Y[k][i] == sf.at_least_one_T([X[k][i][j] for j in range(n+1) if i != j]))
+        solver.add(Y[k][i] == sf.at_least_one_T([X[k][j][i] for j in range(n+1) if i != j]))        
 
-for j in myRange(n):
-    for k in myRange(m):
-        solver.add(Y[j, k] == sf.at_least_one_T([X[i, j, k] for i in myRange(n+1) if i != j]))
+# C2.5
+for i in range(n):
+    solver.add(sf.exactly_one_T([Y[k][i] for k in range(m)]))
+
+if verbose:
+    print(f"constraint C2 added")
 
 # C3
-for k in myRange(m):
-    sizes_b = [size(i) for i in myRange(n)]
-    mask = [Y[i, k] for i in myRange(n)]
-    solver.add(sf.lte(sf.masked_sum_n(sizes_b, mask), maxload(k)))
+for k in range(m):
+    sizes_b = [sb[i] for i in range(n)]
+    mask = Y[k]
+    solver.add(sf.lte(sf.masked_sum_n(sizes_b, Y[k]), lb[k]))
+
+if verbose:
+    print(f"constraint C3 added")
 
 # C4
-for k in myRange(m):
-    solver.add(sf.exactly_one_T([X[n+1, j, k] for j in myRange(n)]))
-    solver.add(sf.exactly_one_T([X[i, n+1, k] for i in myRange(n)]))
-    solver.add(sf.at_least_one_T([Y[i, k] for i in myRange(n)]))
+for k in range(m):
+    solver.add(sf.exactly_one_T([X[k][n][j] for j in range(n)]))
+    solver.add(sf.exactly_one_T([X[k][i][n] for i in range(n)]))
+    solver.add(sf.at_least_one_T([Y[k][i] for i in range(n)]))
+
+if verbose:
+    print(f"constraint C4 added")
 
 # C5
-for k in myRange(m):
-    for i in myRange(n):
-        for j in myRange(n):
-            if i != j:
-                solver.add(Implies(X[i, j, k], sf.gt(U[j], U[i])))
+for i in range(n):
+    for j in range(n):
+        if i != j:
+            arc_traversed = sf.at_least_one_T([X[k][i][j] for k in range(m)])
+            solver.add(Implies(arc_traversed, sf.gt(U[j], U[i])))
+
+if verbose:
+    print(f"constraint C5 added")
 
 # cost constraints
+for k in range(m):
+    for j in range(n):
+        solver.add(Implies(X[k][n][j], sf.eq(Db[n][j], StartCost[k])))
 
-for k in myRange(m):
-    for j in myRange(n):
-        solver.add(Implies(X[n+1, j, k], sf.eq(cost(n+1, j), StartCost[k])))
-
-for k in myRange(m):
-    for i in myRange(n):
-        solver.add(Implies(Not(Y[i, k]), sf.all_F(DepCost[i, k])))
-        for j in myRange(n+1):
+for k in range(m):
+    for i in range(n):
+        solver.add(Implies(Not(Y[k][i]), sf.all_F(DepCost[k][i])))
+        for j in range(n+1):
             if i != j:
-                solver.add(Implies(X[i, j, k], sf.eq(cost(i, j), DepCost[i, k])))
+                solver.add(Implies(X[k][i][j], sf.eq(D[i][j], DepCost[k][i])))
 
-for k in myRange(m):
-    solver.add(sf.eq(C[k], sf.sum_b_list([DepCost[i, k] for i in myRange(n)]+[StartCost[k]])))
+for k in range(m):
+    solver.add(sf.eq(C[k], sf.sum_b_list([DepCost[k][i] for i in range(n)]+[StartCost[k]])))
 
-solver.add(sf.max_elem([C[k] for k in myRange(m)], MaxCost))
+solver.add(sf.max_elem([C[k] for k in range(m)], MaxCost))
 solver.add(sf.gte(MaxCost, sf.int2boolList(LB)))
+
+if verbose:
+    print(f"cost constraints added")
 
 # -- solve and visualization --
 
 def printTour(model, k):
     print(np.array(
-        [[1 if j != i and model[X[i, j, k]] else 0 for j in myRange(n+1)] for i in myRange(n+1)]
+        [[1 if j != i and model[X[k][i][j]] else 0 for j in range(n+1)] for i in range(n+1)]
     ))
 
 def printAssignments(model, k):
     print(np.array(
-        [1 if model[Y[i, k]] else 0 for i in myRange(n)]
+        [1 if model[Y[k][i]] else 0 for i in range(n)]
     ))
 
 def print_cost_courier(model, k):
@@ -191,7 +171,7 @@ def print_cost_courier(model, k):
     print(f"Cost: {sf.bool2int(c_b)}")
 
 def print_solution(model):
-    for k in myRange(m):
+    for k in range(m):
         print(f"-- courier {k} --")
         printTour(model, k)
         print()
@@ -209,7 +189,7 @@ def print_costs():
 def print_accs(k):
     sc = [model[StartCost[k][i]] for i in range(len(StartCost[k]))]
     print(f"Start cost acc: {sf.bool2int(sc)}")
-    dc = [sf.bool2int([model[DepCost[i, k][q]] for q in range(len(DepCost[i, k]))]) for i in myRange(n)]
+    dc = [sf.bool2int([model[DepCost[k][i][q]] for q in range(len(DepCost[k][i]))]) for i in range(n)]
     print(f"Departure cost accs: {dc}")
 
 model, search_time = seqential_search(UB, LB, MaxCost, solver, time_limit, verbose)
@@ -219,19 +199,18 @@ def getSolution():
         obj = 0
         sol = "N/A"
     else:
-        mod = model
-        obj = sf.bool2int([mod[MaxCost[i]] for i in range(len(MaxCost))])
+        obj = sf.bool2int([model[MaxCost[q]] for q in range(len(MaxCost))])
         sol = []
-        for k in myRange(m):
+        for k in range(m):
             path = []
-            current = n+1
+            current = n
             dest = 0
             path = []
-            while(dest != n+1):
-                dest = 1
-                while(current == dest or mod[X[current, dest, k]] == False):
+            while(dest != n):
+                dest = 0
+                while(current == dest or model[X[k][current][dest]] == False):
                     dest += 1
-                if dest != n+1:
+                if dest != n:
                     path.append(dest)
                     current = dest
             sol.append(path)
