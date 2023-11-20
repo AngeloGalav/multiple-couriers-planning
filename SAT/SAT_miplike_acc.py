@@ -3,10 +3,8 @@ import z3
 from z3 import Bool, Implies, Not
 import SATfunctions2 as sf
 import numpy as np
-import time, sys
+import time
 from sat_utils import *
-sys.path.append('./')
-from data_handlers import saveAsJson
 
 name = "miplike_acc"
 
