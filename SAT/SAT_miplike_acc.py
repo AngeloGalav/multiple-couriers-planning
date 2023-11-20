@@ -211,7 +211,7 @@ def getSolution():
                 while(current == dest or model[X[k][current][dest]] == False):
                     dest += 1
                 if dest != n:
-                    path.append(dest)
+                    path.append(dest+1)
                     current = dest
             sol.append(path)
     return search_time, obj, sol
