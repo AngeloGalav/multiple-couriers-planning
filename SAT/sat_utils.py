@@ -8,13 +8,15 @@ def get_args():
     parser = ArgumentParser()
     parser.add_argument("-t", "--timelimit", type=int, default=300)
     parser.add_argument("-i", "--instance", type=int, default=3)
+    parser.add_argument("-v", "--verbose", action='store_true')
 
     args = parser.parse_args()._get_kwargs()
 
     time_limit = args[0][1]
     instance = args[1][1]
+    verbose = args[2][1]
 
-    return time_limit, instance
+    return time_limit, instance, verbose
 
 def get_input(instance: int):
     inst_name = "inst"+str(instance).zfill(2)+".dat"
