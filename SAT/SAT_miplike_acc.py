@@ -82,6 +82,8 @@ MaxCost = [Bool(f"MaxCost[{q}]") for q in range(floor(log2(UB))+1)]
 
 # constraints declaration
 
+start_time = time.time()
+
 # C1
 for i in range(n):
     solver.add(sf.at_least_one_T([X[k][i][j] for j in range(n+1) if i != j for k in range(m)]))
@@ -124,35 +126,42 @@ if verbose:
     print(f"constraint C4 added")
 
 # C5
-for i in range(n):
-    for j in range(n):
-        if i != j:
-            arc_traversed = sf.at_least_one_T([X[k][i][j] for k in range(m)])
-            solver.add(Implies(arc_traversed, sf.gt(U[j], U[i])))
+if time_limit - floor(time.time() - start_time) > 0:
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                arc_traversed = sf.at_least_one_T([X[k][i][j] for k in range(m)])
+                solver.add(Implies(arc_traversed, sf.gt(U[j], U[i])))
 
 if verbose:
     print(f"constraint C5 added")
 
 # cost constraints
-for k in range(m):
-    for j in range(n):
-        solver.add(Implies(X[k][n][j], sf.eq(Db[n][j], StartCost[k])))
+if time_limit - floor(time.time() - start_time) > 0:
+    for k in range(m):
+        for j in range(n):
+            solver.add(Implies(X[k][n][j], sf.eq(Db[n][j], StartCost[k])))
 
-for k in range(m):
-    for i in range(n):
-        solver.add(Implies(Not(Y[k][i]), sf.all_F(DepCost[k][i])))
-        for j in range(n+1):
-            if i != j:
-                solver.add(Implies(X[k][i][j], sf.eq(D[i][j], DepCost[k][i])))
+    for k in range(m):
+        for i in range(n):
+            solver.add(Implies(Not(Y[k][i]), sf.all_F(DepCost[k][i])))
+            for j in range(n+1):
+                if i != j:
+                    solver.add(Implies(X[k][i][j], sf.eq(D[i][j], DepCost[k][i])))
 
-for k in range(m):
-    solver.add(sf.eq(C[k], sf.sum_b_list([DepCost[k][i] for i in range(n)]+[StartCost[k]])))
+    for k in range(m):
+        solver.add(sf.eq(C[k], sf.sum_b_list([DepCost[k][i] for i in range(n)]+[StartCost[k]])))
 
-solver.add(sf.max_elem([C[k] for k in range(m)], MaxCost))
-solver.add(sf.gte(MaxCost, sf.int2boolList(LB)))
+    solver.add(sf.max_elem([C[k] for k in range(m)], MaxCost))
+    solver.add(sf.gte(MaxCost, sf.int2boolList(LB)))
 
 if verbose:
     print(f"cost constraints added")
+
+if verbose:
+    print(f"Time spent for constraints: {time.time() - start_time}")
+
+remaining_time = max(0, time_limit - floor(time.time() - start_time))
 
 # -- solve and visualization --
 
@@ -193,9 +202,9 @@ def print_accs(k):
     print(f"Departure cost accs: {dc}")
 
 if strategy == 'binary':
-    model, search_time = binary_search(UB, LB, MaxCost, solver, time_limit, verbose)
+    model, search_time = binary_search(UB, LB, MaxCost, solver, remaining_time, verbose)
 elif strategy == 'sequential':
-    model, search_time = seqential_search(UB, LB, MaxCost, solver, time_limit, verbose)
+    model, search_time = seqential_search(UB, LB, MaxCost, solver, remaining_time, verbose)
 else:
     raise Exception("Invalid strategy argument")
 
@@ -223,7 +232,7 @@ def getSolution():
 
 save_solution(instance, name, getSolution())
 
-if verbose:
+if verbose and model is not None:
     print_costs()
     print_solution(model)
 
