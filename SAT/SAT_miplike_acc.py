@@ -7,11 +7,11 @@ import numpy as np
 import time
 from sat_utils import *
 
-name = "miplike_acc"
-
-time_limit, instance, verbose = get_args()
+time_limit, instance, verbose, strategy = get_args()
 m,n,l,s,D,LB,UB = get_input(instance)
 mb, nb, lb, sb, Db = binarize_input(m, n, l, s, D)
+
+name = "miplike_" + strategy
 
 '''
 Logical formulations:
@@ -192,7 +192,12 @@ def print_accs(k):
     dc = [sf.bool2int([model[DepCost[k][i][q]] for q in range(len(DepCost[k][i]))]) for i in range(n)]
     print(f"Departure cost accs: {dc}")
 
-model, search_time = seqential_search(UB, LB, MaxCost, solver, time_limit, verbose)
+if strategy == 'binary':
+    model, search_time = binary_search(UB, LB, MaxCost, solver, time_limit, verbose)
+elif strategy == 'sequential':
+    model, search_time = seqential_search(UB, LB, MaxCost, solver, time_limit, verbose)
+else:
+    raise Exception("Invalid strategy argument")
 
 def getSolution():
     if model is None:

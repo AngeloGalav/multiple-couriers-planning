@@ -10,14 +10,16 @@ def get_args():
     parser.add_argument("-t", "--timelimit", type=int, default=300)
     parser.add_argument("-i", "--instance", type=int, default=3)
     parser.add_argument("-v", "--verbose", action='store_true')
+    parser.add_argument("-s", "--strategy", type=str, choices=['binary', 'sequential'], default='binary')
 
     args = parser.parse_args()._get_kwargs()
 
     time_limit = args[0][1]
     instance = args[1][1]
     verbose = args[2][1]
+    strategy = args[3][1]
 
-    return time_limit, instance, verbose
+    return time_limit, instance, verbose, strategy
 
 def get_input(instance: int):
     inst_name = "inst"+str(instance).zfill(2)+".dat"
