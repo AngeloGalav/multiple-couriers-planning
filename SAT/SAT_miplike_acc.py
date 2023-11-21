@@ -161,6 +161,7 @@ if verbose:
 if verbose:
     print(f"Time spent for constraints: {time.time() - start_time}")
 
+const_time = time.time() - start_time
 remaining_time = max(0, time_limit - floor(time.time() - start_time))
 
 # -- solve and visualization --
@@ -228,7 +229,7 @@ def getSolution():
                     path.append(dest+1)
                     current = dest
             sol.append(path)
-    return search_time, obj, sol
+    return round(const_time+search_time, 2), obj, sol
 
 save_solution(instance, name, getSolution())
 
