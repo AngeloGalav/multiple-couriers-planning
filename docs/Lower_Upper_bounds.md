@@ -1,35 +1,16 @@
 ### LOWER BOUND:
+Minimum arrival costs bound:
+If there are m couriers and n items, a courier will have to deliver at least [Q=ceil(n/m)] items, so he will go from the origin to the first item, then travel from item to item Q-1 times, and then return to the origin. We can compute the minimum cost of arrival for each node as m_j = min(i 1..n with i!=j){D[i, j]} for j in 1..n, and then select the Q-1 smallest m_j values mC1, .., mCQ-1. This means the optimal solution will have a cost <= mL + mR + mC1 + ... + mCQ-1, where mR and mL are the minimum costs for leaving and returning to the origin respectively.
 
-First idea:
-Since at least one courier has to deliver an item, it needs to leave the origin node and return it.
-This means at least one courier will have cost > 0, and the cost for its path will be >= mL+mR, where mL is the minimum cost required to leave the
-origin, and mR is the minimum cost to return to the origin.
-mL is the min value of the last row (except D[n+1, n+1]) and mR is the min value of the last column (except D[n+1, n+1]).
+Maximum simple path cost:
+Consider two paths P1 and P2 that both deliver item i, where P1 only delivers item i, while P2 delivers i ans any number of other items. The cost of P1 is D[n+1, i]+D[i, n+1], and the cost of P2 will be D[n+1, k1]+...+D[k2, i]+D[i, k3]+...+D[k4, n+1]. Since the inequality D[i, j] <= D[i, k]+D[k, j] holds, then D[n+1, i] <= D[n+1, k1]+...+D[k2, i] and D[i, n+1] <= D[i, k3]+...+D[k4, n+1], so P1's cost is always lesser or equal than P2's cost. 
+We can then compute the cost of all such simple paths Pj (that deliver only one item), and compute the lower bound ad the maximum cost among such simple paths (LB = max(j in 1..n)(D[n+1,j]+D[j,n+1])). 
 
-Improvement:
-Example case - if there are 3 couriers and 4 items have to be delivered, a courier will have to deliver at least 2 items.
-In this case the cost will be >= mL+mR+mC1, where C1 is the cost of the less costly edge arriving to a node different from n+1.
-in this case [mC1 = min(i 1..n+1, j in 1..n where i!=j)(D[i, j])].
-
-General case - if there are m couriers and n items, a courier will have to deliver at least [Q=ceil(n/m)] items, so he will traverse Q-1 arcs that go from item to item, and the cost will be >= mL+mR+mC1+...+mCQ-1,
-where mC1,...,mCQ-1 are the Q-1 lowest cost arcs that don't involve n+1.
-In general mC1,...,mCQ-1 are the first Q-1 elements of the sorted flattened array [sort(flatten(remove_diagonal(D[1:n+1, 1:n])))]
-
-Second improvement:
-In the previous improvement, if two values mCi and mCj are two arcs that arrive at the same node, they can't both be traversed. We can get a tighter lower
-bound by computing the minimum cost of arrival for each node as m_j = min(i 1..n with i!=j){D[i, j]} for j in 1..n, and then take as mC1, .., mCQ-1 the lowest m_j values (LB = mL + mR + mC1 + ... + mCQ-1).
-This is also more efficient since sorting all costs is O(n^2*log(n^2)), while this algorithm is O(n^2 + nlog(n))=O(n^2)
-
+We ca use both and select the highest lower bound among the two, generally the second bound is way better
 
 ### UPPER BOUND:
-
-First idea:
-The solution with the highest cost is a solution where all items are delivered by one courier, and the path is a an hemiltonian cycle with the highest
-possible cost. If we have n nodes, the worst solution will have a cost <= than (M_1 + M_2 + ... + M_n + M_(n+1)), where M_i is the cost of the most costly
-edge arriving to node i [M_i = max(j in 1..n+1 where j!=i)(D[j, i])]
-
-Improvement (assumes each courier delivers at least one item):
-In this case the longest possible tour delivers n-m+1 items, so in departs and arrives at the origin, and travels from item to item n-m times. The worst solution will have a cost <= than (ML + MR + MC1 + ... + MCn-m), where ML and MR are the maximum costs to leave and return to the origin respectively. If M_i is the maximum cost of arrival to node i [M_i = max(j in 1..n+1 where j!=i)(D[j, i])], then MC1...MCn-m are the highest n-m M_i values.
+Minimum arrival costs bound:
+A courier can deliver at most Q=n-m+1 items since each courier has atleast one item. In that case it leaves the origin, travels from node to node Q-1 times and returns to the origin. We can compute the maximum cost of arrival for each node as M_j = max(i 1..n with i!=j){D[i, j]} for j in 1..n, and then select the Q-1 biggest M_j values MC1,..,MCQ-1. This means the optimal solution will have a cost >= ML + MR + MC1 + ... + MCQ-1, where MR and ML are the maximum costs for leaving and returning to the origin respectively.
 
 
 ### Keep in mind:

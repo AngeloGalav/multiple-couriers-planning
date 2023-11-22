@@ -91,19 +91,19 @@ def parseInstance(filename):
 
 def lower_bound(D, m, n):
     Q = math.ceil(n/m)
-    d = [[D[i][j] for j in range(n+1) if i != j] for i in range(n+1)]
-    cols = [[D[j][i] for j in range(n+1) if i != j] for i in range(n+1)]
-
     mL = min([D[n][i] for i in range(n)]) # last row
     mR = min([D[i][n] for i in range(n)]) # last column
-
     mins = [min(D[j][i] for j in range(n) if i!=j) for i in range(n)]
     mins.sort()
+    min_arr_lb = sum(mins[:Q-1]) + mL + mR
 
-    return sum(mins[:Q-1]) + mL + mR
+    simple_path_costs = [D[n][i]+D[i][n] for i in range(n)]
+    sim_path_lb = max(simple_path_costs)
+
+    return max(sim_path_lb, min_arr_lb)
 
 def upper_bound(D, m, n):
-    Q = math.ceil(n-m+1)
+    Q = n-m+1
     ML = max([D[n][i] for i in range(n)]) # last row
     MR = max([D[i][n] for i in range(n)]) # last column
 
