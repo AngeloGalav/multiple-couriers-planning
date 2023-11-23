@@ -228,7 +228,7 @@ while high != low:
 t = time.time() - start_time
 
 def getSolution(status, best, n, m):
-    if t >= time_limit - 1:
+    if t >= time_limit*1000 - 1:
         t = time_limit
     if status != 1:
         obj = 0
