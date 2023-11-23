@@ -142,7 +142,3 @@ def saveAsJson(instanceName, solveName, path, solutionInfo):
     save_file = open(filepath, "w")
     json.dump(json_sols, save_file)
     save_file.close()
-
-# Quick usage example
-#m, n, _, _, D = get_values_from_dzn(input_text)
-#print(computeBounds(D, m, n))
