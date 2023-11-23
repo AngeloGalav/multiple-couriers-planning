@@ -14,7 +14,7 @@ import time
 parser = ArgumentParser()
 parser.add_argument("-s", "--solver", type=str, choices=['Z3'], default='Z3')
 parser.add_argument("-t", "--timelimit", type=int, default=300)
-parser.add_argument("-i", "--instance", type=int, default=3)
+parser.add_argument("-i", "--instance", type=int, default=1)
 
 args = parser.parse_args()._get_kwargs()
 
@@ -24,7 +24,7 @@ instance = args[2][1]
 
 inst_name = "inst"+str(instance).zfill(2)+".dat"
 m,n,l,s,D = parseInstance('./instances/'+inst_name)
-high, low = computeBounds(D, m, n)
+low,high = computeBounds(D, m, n)
 
 
 def at_least_one_T(bools) -> z3.BoolRef:                                      
@@ -126,7 +126,6 @@ for i in range(n):
 for k in range(m):
     C[k] = z3.Int(f"C_{k}")
 
-
 # constraints declaration
 
 # C1
@@ -180,54 +179,26 @@ solver.add(at_least_one_T([MaxCost==C[k] for k in range(m)]))
 solver.add(MaxCost>=low)
 solver.add(MaxCost<=high)
 
-'''# -- solve and visualization --
-def printTour(model, k):
-    x = np.array(
-        [[1 if j != i and model[X[i, j, k]] else 0 for j in range(n+1)] for i in range(n+1)]
-    )
-    print(x)
-    return x
-
-def printAssignments(model, k):
-    x = np.array(
-        [1 if model[Y[i, k]] else 0 for i in range(n)]
-    )
-    print(x)
-    return x
-
-def print_cost_courier(model, k):
-    print(f"Cost: {model[C[k]]}")
-
-def print_solution(model):
-    for k in range(m):
-        print(f"-- courier {k} --")
-        printTour(model, k)
-        print()
-        printAssignments(model, k)
-        print_cost_courier(model, k)
-        print()'''
-
 bestModel = None
 start_time = time.time()
 # binary search for the minimum cost solution
-while high != low:
-    mid = low + (high - low)//2
+while high > low:
+    mid = (high + low)//2
     #print(f"trying MaxCost <= {mid}")
     res = solver.check(MaxCost<=mid)
     if res == z3.sat:
-        #print(f"Sat")
+        print(f"Sat for {mid}")
         high = mid
         bestModel = solver.model()
     else:
-        #print("Unsat")
-        low = mid + 1
+        print(f"Unsat for {mid}")
+        low = mid+1
     #print()
 
 #print(f"final max cost: {high}")
 #sol = print_solution(bestModel)
 t = time.time() - start_time
-
-def getSolution(status, best, n, m):
+def getSolution(status, best, n, m, t):
     if t >= time_limit*1000 - 1:
         t = time_limit
     if status != 1:
@@ -238,18 +209,18 @@ def getSolution(status, best, n, m):
         sol = []
         for k in range(m):
             path = []
-            current = n+1
+            current = n
             dest = 0
             path = []
-            while(dest != n+1):
-                dest = 1
+            while(dest != n):
+                dest = 0
                 while(current == dest or best[X[current, dest, k]] != 1):
                     dest += 1
-                if dest != n+1:
+                if dest != n:
                     path.append(dest)
                     current = dest
             sol.append(path)
-    return time, obj, sol
+    return t, obj, sol
 
 
-saveAsJson(str(instance), solv_arg, "./res/SMT/", getSolution(solver, res, bestModel, n, m))
+saveAsJson(str(instance), solv_arg, "./res/SMT/", getSolution(res, bestModel, n, m, t))
