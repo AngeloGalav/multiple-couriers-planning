@@ -14,7 +14,7 @@ mb, nb, lb, sb, Db = binarize_input(m, n, l, s, D)
 name = "cplike_" + strategy
 
 """
-x[1..n] - x[i] contains the index k of the courier assigned to item i (domain 0..m-1). 
+x[1..k][1..n] bool - x[k][i] is true if courier k delivers item i. 
 tour[1..n] - If courier k has to deliver item i, tour[i] is the step of the path at which courier k deliver item i (domain 0..n-m)
 count[1..m] - count[k] contains the number of items assigned to courier k
 
@@ -23,21 +23,21 @@ item i is assigned to courier k, and tour[i]=s-1 means an item is assigned at st
 
 C1 - The total weight of items transported by a courier must be lower or equal than the courier's 
 maximum laod. We use vaiable x to define this constraint.
+    - each courierdelivers atleast one item
+    - each item is delivered by exactly one courier
 
-C2 - items delivered by the same courier must be delivered at different steps, so if x[j1]==x[j2], then
-tour[j1] != tour[j2] must hold.
+C2 - items delivered by the same courier must be delivered at different steps, so if x[i]==x[j], then
+tour[i] != tour[j] must hold.
 
 C3 - if courier i must deliver k items [k1..kp], the relative values of tour tour[k1..kp] must be
 constrained between 1 and k (0 and k-1 in the encodings)
 """
 
 # variable declaration
-
-X = [[Bool(f"X_{i}[{q}]") for q in range(floor(log2(m-1))+1)] for i in range(n)]
 Tour = [[Bool(f"Tour_{i}[{q}]") for q in range(floor(log2(n-m))+1)] for i in range(n)]
 Count = [[Bool(f"Count_{k}[{q}]") for q in range(floor(log2(n-m+1))+1)] for k in range(m)]
-
 XMat = [[Bool(f"XMat_{k},{i}")for i in range(n)] for k in range(m)]
+
 StartCost = [[Bool(f"StartCost_{k}[{q}]") for q in range(max([len(Db[n][j]) for j in range(n)]))] for k in range(m)]
 DepCost = [[[Bool(f"DepCost_{k},{i}[{q}]") for q in range(max([len(Db[i][j]) for j in range(n+1)]))] for i in range(n)] for k in range(m)]
 C = [[Bool(f"C_{k}[{q}]") for q in range(floor(log2(UB))+1)] for k in range(m)]
@@ -50,27 +50,24 @@ solver = z3.Solver()
 # domain costraints (Tour's upper bounds are defined in C3)
 start_time = time.time()
 
-for i in range(n):
-    solver += sf.lt(X[i], sf.int2boolList(m))
-
 # C1
+
 for k in range(m):
-    assigned_items = [sf.eq(X[i], sf.int2boolList(k)) for i in range(n)]
-    load = sf.masked_sum_n(sb, assigned_items)
+    load = sf.masked_sum_n(sb, XMat[k])
     solver += sf.lte(load, lb[k])
+
+for k in range(m):
+    solver += sf.at_least_one_T(XMat[k])
+
+for i in range(n):
+    solver += sf.exactly_one_T([XMat[k][i] for k in range(m)])
 
 if verbose:
     print(f"constraint C1 added")
 
-# XMat sync const
-for k in range(m):
-    solver += sf.at_least_one_T(XMat[k])
-    for i in range(n):
-        solver += sf.eq(X[i], sf.int2boolList(k)) == XMat[k][i]
-
 # C2
 for i, j in combinations(range(n), r=2):
-    solver += Implies(sf.eq(X[i], X[j]), sf.ne(Tour[i], Tour[j]))
+    solver += Implies(sf.eq([XMat[k][i] for k in range(m)], [XMat[k][j] for k in range(m)]), sf.ne(Tour[i], Tour[j]))
 
 if verbose:
     print(f"constraint C2 added")
@@ -79,14 +76,13 @@ if verbose:
 for i in range(n):
     for k in range(m):
         kb = sf.int2boolList(k)
-        solver += Implies(sf.eq(X[i], kb), sf.lt(Tour[i], Count[k]))
+        solver += Implies(XMat[k][i], sf.lt(Tour[i], Count[k]))
 
 if verbose:
     print(f"constraint C3 added")
 
 # count constraints
 for k in range(m):
-    #solver += sf.eq(Count[k], sf.sum_b_list([[sf.eq(X[j], kb)] for j in range(n)]))
     solver += sf.eq(Count[k], sf.sum_b_list([XMat[k][i] for i in range(n)]))
 
 if verbose:
@@ -96,7 +92,7 @@ if verbose:
 for k in range(m):
     kb = sf.int2boolList(k)
     for j in range(n):
-        solver += Implies(And(sf.all_F(Tour[j]), sf.eq(X[j], kb)), sf.eq(StartCost[k], D[n][j]))
+        solver += Implies(And(sf.all_F(Tour[j]), XMat[k][j]), sf.eq(StartCost[k], D[n][j]))
 
 for k in range(m):
     for i in range(n):
@@ -164,9 +160,7 @@ def print_courier(k):
     print(f"Assignments mat row {[1 if model[XMat[k][i]] else 0 for i in range(len(XMat[k]))]}")
 
 def print_solution(model):
-    x_vals = [sf.bool2int([model[X[i][q]] for q in range(len(X[i]))]) for i in range(n)]
     tour_vals = [sf.bool2int([model[Tour[i][q]] for q in range(len(Tour[i]))]) for i in range(n)]
-    print(f"Assignemnts: {x_vals}")
     print(f"Tours:       {tour_vals}")
     for k in range(m):
         print_courier(k)
@@ -185,13 +179,13 @@ def getSolution():
         sol = "N/A"
     else:
         obj = sf.bool2int([model[MaxCost[q]] for q in range(len(MaxCost))])
-        x_vals = np.array([sf.bool2int([model[X[i][q]] for q in range(len(X[i]))]) for i in range(n)])
+        xmat_vals = np.array([[1 if model[XMat[k][i]] else 0 for i in range(n)] for k in range(m)])
         tour_vals = np.array([sf.bool2int([model[Tour[i][q]] for q in range(len(Tour[i]))]) for i in range(n)])
         count_vals = [sf.bool2int([model[Count[k][q]] for q in range(len(Count[k]))]) for k in range(m)]
         sol = []
         for k in range(m):
             tour_k = tour_vals.copy()
-            tour_k[x_vals != k] = n+1
+            tour_k[xmat_vals[k, :] == 0] = n+1
             tour_k = tour_k.argsort() + 1
             sol.append(tour_k[:count_vals[k]].tolist())
     return round(const_time+search_time, 2), obj, sol
