@@ -30,50 +30,28 @@ opts = {"SAT" : ["-s binary", "-s sequential"],
         "SMT" : [""],
         "CP"  : ["-a"]}
 
-# Replace 'your_folder_path' with the actual path to your folder containing Python files
-def execute_all_files() :
-    folders = ["MIP", "CP", "SAT", "SMT"]
-    files = []
-    for fol in folders :
-        filesToAdd = (os.listdir(fol))
-        x = []
-        for i in filesToAdd :
-            x.append(str(os.path.join(fol, i)))
-        files.extend(x)
-
-    files.remove('MIP/fixed_apis.py') # exclude this library, need to find a better workaround for this (libs folder?)
-
-    python_files = [file for file in files if file.endswith('.py')]
-    python_files.append('cp_python.py')
-
-    instances = [file for file in os.listdir("instances") if file.endswith(".dat")]
-
-    # execute files
-    for python_file in python_files:
-        for inst in instances:
-            try:
-                print("\n\n --- Running ", python_file, " on instance ", inst, "---\n")
-                subprocess.run(['python', python_file])
-            except Exception as e:
-                print(f"An error occurred while executing {python_file}: {e}")
+def run_model(instance, opts, model) :
+    try:
+        print("\n--- Running ", model,
+                " on instance ", instance, " with args ", opts, " ---\n")
+        cmd = ['python', model, "-i", str(instance)]
+        cmd.extend(opts.split(' '))
+        subprocess.run(cmd)
+        print("Done!")
+    except Exception as e:
+        print(f"An error occurred while executing {model}: {e}")
 
 def run_models(instance) :
     if model_family == None :
-        print("sry but as of now executing all files is disabled!")
-        # execute_all_files()
-        # todo: remove execute all files and instead do a more ordered version of that program
+        # set it and forget it
+        for key in models.keys() :
+            for m in models[key] :
+                for op in opts[key] :
+                    run_model(instance, op, m)
     else:
         for m in models[model_family] :
             for op in opts[model_family] :
-                try:
-                    print("\n\n --- Running ", m,
-                          " on instance ", instance, " with args ", op, " ---\n")
-                    # print(['python', m, "-i", instance, op])
-                    cmd = ['python', m, "-i", str(instance)]
-                    cmd.extend(op.split(' '))
-                    subprocess.run(cmd)
-                except Exception as e:
-                    print(f"An error occurred while executing {m}: {e}")
+                run_model(instance, op, m)
 
 def run_on_all_instances() :
     for i in range(1, 22) :
