@@ -1,4 +1,6 @@
 import z3
+import sys
+sys.path.append('./')
 from data_handlers import saveAsJson, computeBounds, parseInstance
 from argparse import ArgumentParser
 

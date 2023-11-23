@@ -5,8 +5,7 @@ from z3 import And, Bool, Not, Or, Implies
 from itertools import combinations
 import sys
 sys.path.append('./')
-from data_handlers import saveAsJson, computeBounds
-from mcp_input_parser import parseInstance
+from data_handlers import saveAsJson, computeBounds, parseInstance
 from argparse import ArgumentParser
 import time
 
