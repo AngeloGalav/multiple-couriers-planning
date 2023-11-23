@@ -35,7 +35,11 @@ def run_model(instance, opts, model) :
         print("\n--- Running ", model,
                 " on instance ", instance, " with args ", opts, " ---\n")
         cmd = ['python', model, "-i", str(instance)]
-        cmd.extend(opts.split(' '))
+
+        if opts != "" :
+            cmd.extend(opts.split(' '))
+
+        print(cmd)
         subprocess.run(cmd)
         print("Done!")
     except Exception as e:
