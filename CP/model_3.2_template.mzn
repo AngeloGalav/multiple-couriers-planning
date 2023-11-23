@@ -88,8 +88,7 @@ constraint cost == max([
   sum(j in 1..n where tour[j]==count(x, i) /\ x[j]==i)(D[j, n+1])
   |i in 1..m]);
 
-%solve minimize cost
-solve :: int_search(tour, smallest, indomain_min) minimize cost;
+%annotations here
 
 
 output ["Solution:\n"];
