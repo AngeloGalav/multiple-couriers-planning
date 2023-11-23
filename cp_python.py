@@ -83,7 +83,8 @@ def run_cp_instance(model, solverName, dataFile, heur_info=None) :
         saveAsJson(str(instance_id), solv_info, "res/CP/",
                 (total_time, result.solution.objective, result.solution.x))
     else :
-        print("NO SOLUTION FOUND :(")
+        saveAsJson(str(instance_id), solv_info, "res/CP/",
+                (total_time, "N/A", "N/A"))
 
 
 def modify_model_heuristics(modelFile, strategy_choice,
