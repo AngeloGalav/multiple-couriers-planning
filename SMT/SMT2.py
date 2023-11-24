@@ -98,7 +98,7 @@ we don't do it in SAT, since it saves the solver some additional constraints (as
 use LB in the binary search)
 '''
 
-solver = z3.Optimize()
+solver = z3.Solver()
 
 X={}
 Y={}
@@ -225,4 +225,6 @@ def getSolution(best, n, m, t):
     return t, obj, sol
 
 
+with open("./SMT/benchmark.smt2", "w") as file:
+    file.write(solver.to_smt2())
 saveAsJson(str(instance), solv_arg, "./res/SMT/", getSolution(bestModel, n, m, t))
