@@ -183,6 +183,8 @@ bestModel = None
 start_time = time.time()
 # binary search for the minimum cost solution
 while high > low:
+    if time.time()-start_time>time_limit:
+        break
     mid = (high + low)//2
     #print(f"trying MaxCost <= {mid}")
     res = solver.check(MaxCost<=mid)
@@ -198,14 +200,14 @@ while high > low:
 #print(f"final max cost: {high}")
 #sol = print_solution(bestModel)
 t = time.time() - start_time
-def getSolution(status, best, n, m, t):
-    if t >= time_limit*1000 - 1:
+def getSolution(best, n, m, t):
+    if t >= time_limit - 1:
         t = time_limit
-    if status != 1:
+    if best is None:
         obj = 0
         sol = "N/A"
     else:
-        obj = best[MaxCost]
+        obj = best[MaxCost].as_long()
         sol = []
         for k in range(m):
             path = []
@@ -214,13 +216,13 @@ def getSolution(status, best, n, m, t):
             path = []
             while(dest != n):
                 dest = 0
-                while(current == dest or best[X[current, dest, k]] != 1):
+                while(current == dest or best[X[current, dest, k]] == False):
                     dest += 1
                 if dest != n:
-                    path.append(dest)
+                    path.append(dest+1)
                     current = dest
             sol.append(path)
     return t, obj, sol
 
 
-saveAsJson(str(instance), solv_arg, "./res/SMT/", getSolution(res, bestModel, n, m, t))
+saveAsJson(str(instance), solv_arg, "./res/SMT/", getSolution(bestModel, n, m, t))
