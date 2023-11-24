@@ -210,7 +210,7 @@ print(f'OBJECTIVE VALUE: {prob.objective.value()}')
 
 def getSolution(prob, status, X, n, m):
     time = round(prob.solutionTime, 2)
-    if time >= time_limit - 1:
+    if time >= time_limit - 5:
         time = time_limit
     if status != 1:
         obj = 0
