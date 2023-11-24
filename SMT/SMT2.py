@@ -190,8 +190,8 @@ while high > low:
     res = solver.check(MaxCost<=mid)
     if res == z3.sat:
         print(f"Sat for {mid}")
-        high = mid
         bestModel = solver.model()
+        high = bestModel[MaxCost].as_long()
     else:
         print(f"Unsat for {mid}")
         low = mid+1
