@@ -127,15 +127,20 @@ for k in range(m):
     C[k] = z3.Int(f"C_{k}")
 
 # constraints declaration
-
+start_time = time.time()
+print(m,n)
 # C1
+print('Adding C1...')
 for i in range(n):
-    solver.add(exactly_one_T([X[i, j, k] for j in range(n+1) if i != j for k in range(m)]))
+    solver.add(z3.Or([X[i, j, k] for j in range(n+1) if i != j for k in range(m)]))
 
 for j in range(n):
-    solver.add(exactly_one_T([X[i, j, k] for i in range(n+1) if i != j for k in range(m)]))
+    solver.add(z3.Or([X[i, j, k] for i in range(n+1) if i != j for k in range(m)]))
+    for k in range(m):
+        solver.add(at_most_one_T([X[i,j,k] for j in range(n+1) if i != j]))
 
 # C2
+print('Adding C2...')
 for i in range(n):
     for k in range(m):
         solver.add(Y[i, k] == z3.Or([X[i, j, k] for j in range(n+1) if i != j]))
@@ -145,6 +150,7 @@ for j in range(n):
         solver.add(Y[j, k] == z3.Or([X[i, j, k] for i in range(n+1) if i != j]))
 
 # C3
+print('Adding C3...')
 for k in range(m):
     for i in range(n):
         solver.add(z3.Implies(Y[i,k],M[i,k]==s[i]))
@@ -152,11 +158,14 @@ for k in range(m):
     solver.add(l[k]>=z3.Sum([M[i,k] for i in range(n)]))
 
 # C4
+print('Adding C4...')
 for k in range(m):
     solver.add(exactly_one_T([X[n, j, k] for j in range(n)]))
     solver.add(exactly_one_T([X[i, n, k] for i in range(n)]))
+    solver.add(z3.Or([Y[i,k] for i in range(n)]))
 
 # C5
+print('Adding C5...')
 for k in range(m):
     for i in range(n):
         for j in range(n):
@@ -164,6 +173,7 @@ for k in range(m):
                 solver.add(Implies(X[i, j, k], (U[j] > U[i])))
 
 # cost constraints
+print('Adding cost-constraint...')
 for i in range(n+1):
     for j in range(n+1):
         for k in range(m):
@@ -180,7 +190,7 @@ solver.add(MaxCost>=low)
 solver.add(MaxCost<=high)
 
 bestModel = None
-start_time = time.time()
+print('Start searching...')
 # binary search for the minimum cost solution
 while high > low:
     if time.time()-start_time>time_limit:
@@ -197,8 +207,6 @@ while high > low:
         low = mid+1
     #print()
 
-#print(f"final max cost: {high}")
-#sol = print_solution(bestModel)
 t = time.time() - start_time
 def getSolution(best, n, m, t):
     if t >= time_limit - 1:
