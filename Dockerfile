@@ -12,6 +12,12 @@ RUN apt-get -yq install build-essential libreadline-dev libz-dev libgmp3-dev lib
 # SCIP installation
 RUN cp /mine/docker_bins/scip /usr/local/bin
 
+# chuffed installation
+RUN git clone https://github.com/chuffed/chuffed
+WORKDIR /chuffed
+RUN mkdir build && cd build &&  cmake .. && cmake --build . -- -j8 &&  cmake --build . --target install
+WORKDIR /
+
 # HIGHS installation
 RUN mkdir highs
 RUN cd highs

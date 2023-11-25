@@ -21,8 +21,8 @@ parser.add_argument("-he", "--heuristic", type=str,
                     choices=["min", "median", "random", "split"], default='min')
 parser.add_argument("-r", "--restart", type=str,
                     choices=["linear", "geometric", "luby", "none"], default="linear")
-parser.add_argument("-sc", "--scale", type=int, default=1)
-parser.add_argument("-b", "--base", type=int, default=1)
+parser.add_argument("-sc", "--scale", type=int, default=2)
+parser.add_argument("-b", "--base", type=int, default=2)
 parser.add_argument("-i", "--instance", type=int, default=3)
 parser.add_argument('-a', '--all', action='store_true')
 parser.add_argument("-so", "--solver", type=str,
@@ -188,4 +188,4 @@ else :
                                     strategy_choice, heuristic_choice, restart_choice,
                                     restart_scale, restart_base)
     run_cp_instance(model, solver_choice, inst_file)
-    clean_up_template()
+    # clean_up_template()
