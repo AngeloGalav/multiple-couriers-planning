@@ -1,4 +1,4 @@
-include "globals.mzn"; % we could include the used globals individually
+include "alldifferent.mzn"; % we could include the used globals individually
 
 % Define the input data
 int: m; % number of couriers
