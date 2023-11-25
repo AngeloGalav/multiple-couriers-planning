@@ -91,7 +91,7 @@ constraint cost == max([
 %annotations here
 
 
-output ["Solution:\n"];
-output ["x =    \(x)\n"];
-output ["tour = \(tour)\n"];
-output ["objective = \(cost)\n\n"];
+% output ["Solution:\n"];
+% output ["x =    \(x)\n"];
+% output ["tour = \(tour)\n"];
+% output ["objective = \(cost)\n\n"];
