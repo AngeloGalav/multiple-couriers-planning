@@ -11,25 +11,28 @@ timeout = timedelta(seconds=300)
 strategies = ["input_order", "first_fail", "smallest", "dom_w_deg"]
 heuristics = ["indomain_min", "indomain_median", "indomain_random", "indomain_split"]
 restarts = ["restart_linear(<scale>)", "restart_geometric(<base>,<scale>)", "restart_luby(<scale>)"]
+solvers = ["gecode", "chuffed", "gurobi"] # gurobi is the one that works
 
 # --- ARGS ---
 parser = ArgumentParser()
 parser.add_argument("-s", "--strategy", type=str,
-                    choices=["input_order", "first_fail", "smallest", "dom_w_deg"], default='input_order')
+                    choices=strategies, default='input_order')
 parser.add_argument("-he", "--heuristic", type=str,
                     choices=["min", "median", "random", "split"], default='min')
 parser.add_argument("-r", "--restart", type=str,
-                    choices=["linear", "geometric", "luby"], default=None)
+                    choices=["linear", "geometric", "luby"], default="linear")
 parser.add_argument("-sc", "--scale", type=int, default=1)
 parser.add_argument("-b", "--base", type=int, default=1)
 parser.add_argument("-i", "--instance", type=int, default=3)
 parser.add_argument('-a', '--all', action='store_true')
+parser.add_argument("-so", "--solver", type=str,
+                    choices=solvers, default='gecode')
 
 args = parser.parse_args()._get_kwargs()
 
 instance_id = args[5][1]
 inst_file = './instances/'+"inst"+str(instance_id).zfill(2)+".dat"
-run_all = args[6][1]
+run_all_ = args[6][1]
 
 replace_template = """%annotations here
 solve
@@ -63,7 +66,7 @@ def run_cp_instance(model, solverName, dataFile, heur_info=None) :
     instance["UB"] = UB
 
     start = time.time()
-    result = instance.solve(timeout=timeout)
+    result = instance.solve()
     end = time.time()
 
     total_time = end-start
@@ -84,7 +87,7 @@ def run_cp_instance(model, solverName, dataFile, heur_info=None) :
                 (total_time, result.solution.objective, result.solution.x))
     else :
         saveAsJson(str(instance_id), solv_info, "res/CP/",
-                (total_time, "N/A", "N/A"))
+                (total_time, "M", result.solution.x))
 
 
 def modify_model_heuristics(modelFile, strategy_choice,
@@ -127,11 +130,12 @@ def run_all() :
     for i in strategies :
         for j in heuristics :
             for k in restarts :
-                model = modify_model_heuristics(template_path,
-                                    i, j, k, 2, 2)
-                rest_name = k.split('(')[0]
-                print("--- Testing " + i + ", " + rest_name + ", " + j + " ---")
-                run_cp_instance(model, "gecode", inst_file, (i, j, rest_name))
+                for s in solvers :
+                    model = modify_model_heuristics(template_path,
+                                        i, j, k, 2, 2)
+                    rest_name = k.split('(')[0]
+                    print("--- Testing " + i + ", " + rest_name + ", " + j + " ---")
+                    run_cp_instance(model, s, inst_file, (i, j, rest_name))
 
     print("Tested all configurations on instance " + str(instance_id) + ", tidying up now...")
     # tidying up
@@ -149,7 +153,7 @@ def run_all() :
             with open(template_path, 'w') as file:
                 file.write(replaced_text)
 
-if run_all :
+if run_all_ :
     run_all()
 else :
     strategy_choice = args[0][1]
@@ -170,8 +174,9 @@ else :
 
     restart_scale = args[3][1]
     restart_base = args[4][1]
+    solver_choice = args[7][1]
 
     model = modify_model_heuristics("CP/model_3.2_template.mzn",
                                     strategy_choice, heuristic_choice, restart_choice,
                                     restart_scale, restart_base)
-    run_cp_instance(model, "gecode", inst_file)
+    run_cp_instance(model, solver_choice, inst_file)
