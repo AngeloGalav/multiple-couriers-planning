@@ -23,6 +23,15 @@ docker exec -it cdmo bash
 After you've run the command, you should be able to get inside the container and run the required scripts.
 You can find the scripts inside of the docker container by using `cd /mine && ls -al`.
 
+### Running models inside of the container
+When inside of the container, you need to use `python3` instead of the standard python command.
+In this way you can run a model by first getting inside of the `mine` folder using `cd mine`.
+After that, simply run the model by using, for example:
+```
+python3 cp_python.py -i 5 -so chuffed
+```
+__N.B.__: You __have__ to use `python3` instead of `python` as that is the name of the executable in debian. 
+
 ## Killing the container
 After you're done with your work, you'll have to stop the container and removing it.
 ```
@@ -30,6 +39,7 @@ docker kill cdmo
 docker rm cdmo
 ```
 Next time you'll need to start the container, simply use the command that you've use to start the container.
+To be sure that you have killed the container, use the command `docker ps -a`. If you see any active container, it means that the container was not shutdown properly.
 
 ## Copying files
 If you need any of the generated files, such as results files, you can simply copy the files by opening another `bash` console on your local machine (not the container), and then typing
