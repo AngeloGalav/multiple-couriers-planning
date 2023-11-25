@@ -8,6 +8,7 @@ sys.path.append('./')
 from data_handlers import saveAsJson, computeBounds, parseInstance
 from argparse import ArgumentParser
 import time
+from math import ceil
 
 
 # --- ARGS ---
@@ -196,7 +197,7 @@ while high > low:
     if time.time()-start_time>time_limit:
         break
     mid = (high + low)//2
-    #print(f"trying MaxCost <= {mid}")
+    solver.set('timeout',ceil(time.time()-start_time)*1000)
     res = solver.check(MaxCost<=mid)
     if res == z3.sat:
         print(f"Sat for {mid}")
