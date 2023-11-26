@@ -1,4 +1,4 @@
-include "globals.mzn"; % we could include the used globals individually
+include "alldifferent.mzn"; % we could include the used globals individually
 
 % Define the input data
 int: m; % number of couriers
@@ -91,7 +91,7 @@ constraint cost == max([
 %annotations here
 
 
-output ["Solution:\n"];
-output ["x =    \(x)\n"];
-output ["tour = \(tour)\n"];
-output ["objective = \(cost)\n\n"];
+% output ["Solution:\n"];
+% output ["x =    \(x)\n"];
+% output ["tour = \(tour)\n"];
+% output ["objective = \(cost)\n\n"];

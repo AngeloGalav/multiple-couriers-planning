@@ -170,6 +170,7 @@ for k in myRange(m):
 prob += MaxCost
 
 # ---- solve and visualization ----
+print("Start solve")
 status = prob.solve(solver)
 
 if solv_arg == 'glpk':
@@ -183,34 +184,9 @@ elif solv_arg == 'highs':
 else:
     raise Exception("invalid solver argument")
 
-"""
-def printTour(X, k):
-    print(np.array(
-        [[int(X[i, j, k].value()) if j != i else 0 for j in myRange(n+1)] for i in myRange(n+1)]
-    ))
-
-def printAssignments(Y, k):
-    print(np.array(
-        [int(Y[i, k].value()) for i in myRange(n)]
-    ))
-
-print(prob.variablesDict()['MaxCost'].value())
-
-print('SOLUTION:')
-for k in myRange(m):
-    print(f"-- courier {k} --")
-    printTour(X, k)
-    printAssignments(Y, k)
-    print(f"Cost = {int(C[k].varValue)}")
-    print()
-
-print('\n')
-print(f'OBJECTIVE VALUE: {prob.objective.value()}')
-"""
-
 def getSolution(prob, status, X, n, m):
     time = round(prob.solutionTime, 2)
-    if time >= time_limit - 1:
+    if time >= time_limit - 5:
         time = time_limit
     if status != 1:
         obj = 0

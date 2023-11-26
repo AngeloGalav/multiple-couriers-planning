@@ -35,6 +35,8 @@ C3 - if courier i must deliver k items [k1..kp], the relative values of tour tou
 constrained between 1 and k (0 and k-1 in the encodings)
 """
 
+solver = z3.Solver()
+
 # variable declaration
 Tour = [[Bool(f"Tour_{i}[{q}]") for q in range(floor(log2(n-m))+1)] for i in range(n)]
 Count = [[Bool(f"Count_{k}[{q}]") for q in range(floor(log2(n-m+1))+1)] for k in range(m)]
@@ -45,75 +47,88 @@ DepCost = [[[Bool(f"DepCost_{k},{i}[{q}]") for q in range(max([len(Db[i][j]) for
 C = [[Bool(f"C_{k}[{q}]") for q in range(floor(log2(UB))+1)] for k in range(m)]
 MaxCost = [Bool(f"MaxCost[{q}]") for q in range(floor(log2(UB))+1)]
 
-solver = z3.Solver()
-
 # constraint declarations
 
-# domain costraints (Tour's upper bounds are defined in C3)
-start_time = time.time()
+def add_constraints(solver):
+    # C1
+    for k in range(m):
+        load = sf.masked_sum_n(sb, XMat[k])
+        solver += sf.lte(load, lb[k])
+        if time_limit - (time.time()-start_time) < 0:
+            return
 
-# C1
+    for k in range(m):
+        solver += sf.at_least_one_T(XMat[k])
+        if time_limit - (time.time()-start_time) < 0:
+            return
 
-for k in range(m):
-    load = sf.masked_sum_n(sb, XMat[k])
-    solver += sf.lte(load, lb[k])
+    for i in range(n):
+        solver += sf.exactly_one_T([XMat[k][i] for k in range(m)])
+        if time_limit - (time.time()-start_time) < 0:
+            return
 
-for k in range(m):
-    solver += sf.at_least_one_T(XMat[k])
+    if verbose:
+        print(f"constraint C1 added")
 
-for i in range(n):
-    solver += sf.exactly_one_T([XMat[k][i] for k in range(m)])
+    # C2
+    for i, j in combinations(range(n), r=2):
+        solver += Implies(sf.eq([XMat[k][i] for k in range(m)], [XMat[k][j] for k in range(m)]), sf.ne(Tour[i], Tour[j]))
+        if time_limit - (time.time()-start_time) < 0:
+            return
 
-if verbose:
-    print(f"constraint C1 added")
+    if verbose:
+        print(f"constraint C2 added")
 
-# C2
-for i, j in combinations(range(n), r=2):
-    solver += Implies(sf.eq([XMat[k][i] for k in range(m)], [XMat[k][j] for k in range(m)]), sf.ne(Tour[i], Tour[j]))
+    # C3
+    for i in range(n):
+        for k in range(m):
+            kb = sf.int2boolList(k)
+            solver += Implies(XMat[k][i], sf.lt(Tour[i], Count[k]))
+            if time_limit - (time.time()-start_time) < 0:
+                return
 
-if verbose:
-    print(f"constraint C2 added")
+    if verbose:
+        print(f"constraint C3 added")
 
-# C3
-for i in range(n):
+    # count constraints
+    for k in range(m):
+        solver += sf.eq(Count[k], sf.sum_b_list([XMat[k][i] for i in range(n)]))
+        if time_limit - (time.time()-start_time) < 0:
+            return
+
+    if verbose:
+        print(f"constraint C4 added")
+
+    # Cost constraints
     for k in range(m):
         kb = sf.int2boolList(k)
-        solver += Implies(XMat[k][i], sf.lt(Tour[i], Count[k]))
-
-if verbose:
-    print(f"constraint C3 added")
-
-# count constraints
-for k in range(m):
-    solver += sf.eq(Count[k], sf.sum_b_list([XMat[k][i] for i in range(n)]))
-
-if verbose:
-    print(f"constraint C4 added")
-
-# Cost constraints
-for k in range(m):
-    kb = sf.int2boolList(k)
-    for j in range(n):
-        solver += Implies(And(sf.all_F(Tour[j]), XMat[k][j]), sf.eq(StartCost[k], D[n][j]))
-
-for k in range(m):
-    for i in range(n):
-        is_last_item = sf.eq(Count[k], sf.sum_b(Tour[i], [True]))
-        solver += Implies(Not(XMat[k][i]), sf.all_F(DepCost[k][i])) # if courier k doesn't deliver i, then DepCost[i] = 0
-        solver += Implies(And(XMat[k][i], is_last_item), sf.eq(DepCost[k][i], D[i][n]))
         for j in range(n):
-            if i != j:
-                travels_arc = And(And(XMat[k][i], XMat[k][j]), sf.eq(sf.sum_b(Tour[i], [True]), Tour[j]))
-                solver += Implies(travels_arc, sf.eq(DepCost[k][i], D[i][j]))
-                
-for k in range(m):
-    solver.add(sf.eq(C[k], sf.sum_b_list([DepCost[k][i] for i in range(n)]+[StartCost[k]])))
+            solver += Implies(And(sf.all_F(Tour[j]), XMat[k][j]), sf.eq(StartCost[k], D[n][j]))
+            if time_limit - (time.time()-start_time) < 0:
+                return
 
-solver.add(sf.max_elem([C[k] for k in range(m)], MaxCost))
-solver.add(sf.gte(MaxCost, sf.int2boolList(LB)))
+    for k in range(m):
+        for i in range(n):
+            is_last_item = sf.eq(Count[k], sf.sum_b(Tour[i], [True]))
+            solver += Implies(Not(XMat[k][i]), sf.all_F(DepCost[k][i])) # if courier k doesn't deliver i, then DepCost[i] = 0
+            solver += Implies(And(XMat[k][i], is_last_item), sf.eq(DepCost[k][i], D[i][n]))
+            for j in range(n):
+                if i != j:
+                    travels_arc = And(And(XMat[k][i], XMat[k][j]), sf.eq(sf.sum_b(Tour[i], [True]), Tour[j]))
+                    solver += Implies(travels_arc, sf.eq(DepCost[k][i], D[i][j]))
+                    if time_limit - (time.time()-start_time) < 0:
+                        return
+                    
+    for k in range(m):
+        solver.add(sf.eq(C[k], sf.sum_b_list([DepCost[k][i] for i in range(n)]+[StartCost[k]])))
+        if time_limit - (time.time()-start_time) < 0:
+            return 
 
-if verbose:
-    print(f"cost constraints added")
+    solver.add(sf.max_elem([C[k] for k in range(m)], MaxCost))
+    solver.add(sf.gte(MaxCost, sf.int2boolList(LB)))
+
+start_time = time.time()
+add_constraints(solver)
 
 if verbose:
     print(f"Time spent for constraints: {time.time() - start_time}")
@@ -143,12 +158,17 @@ def print_solution(model):
         print_courier(k)
 
 # solving
-if strategy == 'binary':
-    model, search_time = binary_search(UB, LB, MaxCost, solver, remaining_time, verbose)
-elif strategy == 'sequential':
-    model, search_time = seqential_search(UB, LB, MaxCost, solver, remaining_time, verbose)
+if remaining_time > 0:
+    if strategy == 'binary':
+        model, search_time = binary_search(UB, LB, MaxCost, solver, remaining_time, verbose)
+    elif strategy == 'sequential':
+        model, search_time = seqential_search(UB, LB, MaxCost, solver, remaining_time, verbose)
+    else:
+        raise Exception("Invalid strategy argument")
 else:
-    raise Exception("Invalid strategy argument")
+    model = None
+    const_time = time_limit
+    search_time = 0
 
 def getSolution():
     if model is None:

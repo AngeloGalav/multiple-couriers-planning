@@ -5,17 +5,17 @@ from z3 import And, Bool, Not, Or, Implies
 from itertools import combinations
 import sys
 sys.path.append('./')
-from data_handlers import saveAsJson, computeBounds
-from mcp_input_parser import parseInstance
+from data_handlers import saveAsJson, computeBounds, parseInstance
 from argparse import ArgumentParser
 import time
+from math import ceil
 
 
 # --- ARGS ---
 parser = ArgumentParser()
 parser.add_argument("-s", "--solver", type=str, choices=['Z3'], default='Z3')
 parser.add_argument("-t", "--timelimit", type=int, default=300)
-parser.add_argument("-i", "--instance", type=int, default=3)
+parser.add_argument("-i", "--instance", type=int, default=1)
 
 args = parser.parse_args()._get_kwargs()
 
@@ -25,7 +25,7 @@ instance = args[2][1]
 
 inst_name = "inst"+str(instance).zfill(2)+".dat"
 m,n,l,s,D = parseInstance('./instances/'+inst_name)
-high, low = computeBounds(D, m, n)
+low,high = computeBounds(D, m, n)
 
 
 def at_least_one_T(bools) -> z3.BoolRef:                                      
@@ -99,7 +99,7 @@ we don't do it in SAT, since it saves the solver some additional constraints (as
 use LB in the binary search)
 '''
 
-solver = z3.Optimize()
+solver = z3.Solver()
 
 X={}
 Y={}
@@ -127,17 +127,21 @@ for i in range(n):
 for k in range(m):
     C[k] = z3.Int(f"C_{k}")
 
-
 # constraints declaration
-
+start_time = time.time()
+print(m,n)
 # C1
+print('Adding C1...')
 for i in range(n):
-    solver.add(exactly_one_T([X[i, j, k] for j in range(n+1) if i != j for k in range(m)]))
+    solver.add(z3.Or([X[i, j, k] for j in range(n+1) if i != j for k in range(m)]))
 
 for j in range(n):
-    solver.add(exactly_one_T([X[i, j, k] for i in range(n+1) if i != j for k in range(m)]))
+    solver.add(z3.Or([X[i, j, k] for i in range(n+1) if i != j for k in range(m)]))
+    for k in range(m):
+        solver.add(at_most_one_T([X[i,j,k] for j in range(n+1) if i != j]))
 
 # C2
+print('Adding C2...')
 for i in range(n):
     for k in range(m):
         solver.add(Y[i, k] == z3.Or([X[i, j, k] for j in range(n+1) if i != j]))
@@ -147,6 +151,7 @@ for j in range(n):
         solver.add(Y[j, k] == z3.Or([X[i, j, k] for i in range(n+1) if i != j]))
 
 # C3
+print('Adding C3...')
 for k in range(m):
     for i in range(n):
         solver.add(z3.Implies(Y[i,k],M[i,k]==s[i]))
@@ -154,11 +159,14 @@ for k in range(m):
     solver.add(l[k]>=z3.Sum([M[i,k] for i in range(n)]))
 
 # C4
+print('Adding C4...')
 for k in range(m):
     solver.add(exactly_one_T([X[n, j, k] for j in range(n)]))
     solver.add(exactly_one_T([X[i, n, k] for i in range(n)]))
+    solver.add(z3.Or([Y[i,k] for i in range(n)]))
 
 # C5
+print('Adding C5...')
 for k in range(m):
     for i in range(n):
         for j in range(n):
@@ -166,6 +174,7 @@ for k in range(m):
                 solver.add(Implies(X[i, j, k], (U[j] > U[i])))
 
 # cost constraints
+print('Adding cost-constraint...')
 for i in range(n+1):
     for j in range(n+1):
         for k in range(m):
@@ -181,76 +190,50 @@ solver.add(at_least_one_T([MaxCost==C[k] for k in range(m)]))
 solver.add(MaxCost>=low)
 solver.add(MaxCost<=high)
 
-'''# -- solve and visualization --
-def printTour(model, k):
-    x = np.array(
-        [[1 if j != i and model[X[i, j, k]] else 0 for j in range(n+1)] for i in range(n+1)]
-    )
-    print(x)
-    return x
-
-def printAssignments(model, k):
-    x = np.array(
-        [1 if model[Y[i, k]] else 0 for i in range(n)]
-    )
-    print(x)
-    return x
-
-def print_cost_courier(model, k):
-    print(f"Cost: {model[C[k]]}")
-
-def print_solution(model):
-    for k in range(m):
-        print(f"-- courier {k} --")
-        printTour(model, k)
-        print()
-        printAssignments(model, k)
-        print_cost_courier(model, k)
-        print()'''
-
 bestModel = None
-start_time = time.time()
+print('Start searching...')
 # binary search for the minimum cost solution
-while high != low:
-    mid = low + (high - low)//2
-    #print(f"trying MaxCost <= {mid}")
+while high > low:
+    if time.time()-start_time>time_limit:
+        break
+    mid = (high + low)//2
+    solver.set('timeout',ceil(time.time()-start_time)*1000)
     res = solver.check(MaxCost<=mid)
     if res == z3.sat:
-        #print(f"Sat")
-        high = mid
+        print(f"Sat for {mid}")
         bestModel = solver.model()
+        high = bestModel[MaxCost].as_long()
     else:
-        #print("Unsat")
-        low = mid + 1
+        print(f"Unsat for {mid}")
+        low = mid+1
     #print()
 
-#print(f"final max cost: {high}")
-#sol = print_solution(bestModel)
 t = time.time() - start_time
-
-def getSolution(status, best, n, m):
+def getSolution(best, n, m, t):
     if t >= time_limit - 1:
         t = time_limit
-    if status != 1:
+    if best is None:
         obj = 0
         sol = "N/A"
     else:
-        obj = best[MaxCost]
+        obj = best[MaxCost].as_long()
         sol = []
         for k in range(m):
             path = []
-            current = n+1
+            current = n
             dest = 0
             path = []
-            while(dest != n+1):
-                dest = 1
-                while(current == dest or best[X[current, dest, k]] != 1):
+            while(dest != n):
+                dest = 0
+                while(current == dest or best[X[current, dest, k]] == False):
                     dest += 1
-                if dest != n+1:
-                    path.append(dest)
+                if dest != n:
+                    path.append(dest+1)
                     current = dest
             sol.append(path)
-    return time, obj, sol
+    return t, obj, sol
 
 
-saveAsJson(str(instance), solv_arg, "./res/SMT/", getSolution(solver, res, bestModel, n, m))
+with open("./SMT/benchmark.smt2", "w") as file:
+    file.write(solver.to_smt2())
+saveAsJson(str(instance), solv_arg, "./res/SMT/", getSolution(bestModel, n, m, t))

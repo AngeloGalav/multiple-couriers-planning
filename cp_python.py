@@ -10,34 +10,55 @@ timeout = timedelta(seconds=300)
 
 strategies = ["input_order", "first_fail", "smallest", "dom_w_deg"]
 heuristics = ["indomain_min", "indomain_median", "indomain_random", "indomain_split"]
-restarts = ["restart_linear(<scale>)", "restart_geometric(<base>,<scale>)", "restart_luby(<scale>)"]
+restarts = ["restart_linear(<scale>)", "restart_geometric(<base>,<scale>)", "restart_luby(<scale>)", "restart_none"]
+solvers = ["gecode", "chuffed"]
 
 # --- ARGS ---
 parser = ArgumentParser()
 parser.add_argument("-s", "--strategy", type=str,
-                    choices=["input_order", "first_fail", "smallest", "dom_w_deg"], default='input_order')
+                    choices=strategies, default='input_order')
 parser.add_argument("-he", "--heuristic", type=str,
                     choices=["min", "median", "random", "split"], default='min')
 parser.add_argument("-r", "--restart", type=str,
-                    choices=["linear", "geometric", "luby"], default=None)
-parser.add_argument("-sc", "--scale", type=int, default=1)
-parser.add_argument("-b", "--base", type=int, default=1)
+                    choices=["linear", "geometric", "luby", "none"], default="linear")
+parser.add_argument("-sc", "--scale", type=int, default=2)
+parser.add_argument("-b", "--base", type=int, default=2)
 parser.add_argument("-i", "--instance", type=int, default=3)
 parser.add_argument('-a', '--all', action='store_true')
+parser.add_argument("-so", "--solver", type=str,
+                    choices=solvers, default='gecode')
 
 args = parser.parse_args()._get_kwargs()
 
 instance_id = args[5][1]
 inst_file = './instances/'+"inst"+str(instance_id).zfill(2)+".dat"
-run_all = args[6][1]
+run_all_ = args[6][1]
 
+template_path = "CP/model_3.2_template.mzn"
 replace_template = """%annotations here
 solve
 :: seq_search([
             int_search(x, <strat1>, <indom_heur1>),
-            int_search(tour, <strat2>, <indom_heur2>)])
-:: <restart>
+            int_search(tour, <strat2>, <indom_heur2>)]
+            :: <restart>)
 minimize cost;"""
+
+
+def clean_up_template() :
+    # tidying up
+    with open(template_path, 'r') as file:
+        file_content = file.read()
+    index = file_content.find("%annotations here")
+
+    if index != -1:
+        newline_index = file_content.find('\n\n', index)
+        if newline_index != -1:
+            # Replacing the content after target_string until the newline character
+            replaced_text = file_content[:index] + '%annotations here' + file_content[newline_index:]
+
+            # Write the updated content back to the file
+            with open(template_path, 'w') as file:
+                file.write(replaced_text)
 
 def run_cp_instance(model, solverName, dataFile, heur_info=None) :
     # model = Model(modelFile)
@@ -83,7 +104,8 @@ def run_cp_instance(model, solverName, dataFile, heur_info=None) :
         saveAsJson(str(instance_id), solv_info, "res/CP/",
                 (total_time, result.solution.objective, result.solution.x))
     else :
-        print("NO SOLUTION FOUND :(")
+        saveAsJson(str(instance_id), solv_info, "res/CP/",
+                (total_time, "M", result.solution.x))
 
 
 def modify_model_heuristics(modelFile, strategy_choice,
@@ -121,34 +143,25 @@ def modify_model_heuristics(modelFile, strategy_choice,
     model = Model(modelFile)
     return model
 
+
 def run_all() :
-    template_path = "CP/model_3.2_template.mzn"
     for i in strategies :
         for j in heuristics :
             for k in restarts :
-                model = modify_model_heuristics(template_path,
-                                    i, j, k, 2, 2)
-                rest_name = k.split('(')[0]
-                print("--- Testing " + i + ", " + rest_name + ", " + j + " ---")
-                run_cp_instance(model, "gecode", inst_file, (i, j, rest_name))
+                for s in solvers :
+                    # indomain_random is not supported in chuffed
+                    if (s == "chuffed" and j == "indomain_random") : break
+                    model = modify_model_heuristics(template_path,
+                                        i, j, k, 2, 2)
+                    rest_name = k.split('(')[0]
+                    print("--- Testing " + i + ", " + rest_name + ", " + j + " using solver " + s + " ---")
+                    run_cp_instance(model, s, inst_file, (i, j, rest_name))
 
     print("Tested all configurations on instance " + str(instance_id) + ", tidying up now...")
-    # tidying up
-    with open(template_path, 'r') as file:
-        file_content = file.read()
-    index = file_content.find("%annotations here")
+    clean_up_template()
 
-    if index != -1:
-        newline_index = file_content.find('\n\n', index)
-        if newline_index != -1:
-            # Replacing the content after target_string until the newline character
-            replaced_text = file_content[:index] + '%annotations here' + file_content[newline_index:]
 
-            # Write the updated content back to the file
-            with open(template_path, 'w') as file:
-                file.write(replaced_text)
-
-if run_all :
+if run_all_ :
     run_all()
 else :
     strategy_choice = args[0][1]
@@ -169,8 +182,10 @@ else :
 
     restart_scale = args[3][1]
     restart_base = args[4][1]
+    solver_choice = args[7][1]
 
-    model = modify_model_heuristics("CP/model_3.2_template.mzn",
+    model = modify_model_heuristics(template_path,
                                     strategy_choice, heuristic_choice, restart_choice,
                                     restart_scale, restart_base)
-    run_cp_instance(model, "gecode", inst_file)
+    run_cp_instance(model, solver_choice, inst_file)
+    # clean_up_template()

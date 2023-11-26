@@ -82,65 +82,75 @@ MaxCost = [Bool(f"MaxCost[{q}]") for q in range(floor(log2(UB))+1)]
 
 # constraints declaration
 
-start_time = time.time()
+def add_constraints(solver):
+    # C1
+    for i in range(n):
+        solver.add(sf.at_least_one_T([X[k][i][j] for j in range(n+1) if i != j for k in range(m)]))
+        solver.add(sf.at_least_one_T([X[k][j][i] for j in range(n+1) if i != j for k in range(m)]))
+        for k in range(m):
+            solver.add(sf.at_most_one_T([X[k][j][i] for j in range(n+1) if i != j]))
+            if time_limit - (time.time()-start_time) < 0:
+                return
 
-# C1
-for i in range(n):
-    solver.add(sf.at_least_one_T([X[k][i][j] for j in range(n+1) if i != j for k in range(m)]))
-    solver.add(sf.at_least_one_T([X[k][j][i] for j in range(n+1) if i != j for k in range(m)]))
+    if verbose:
+        print(f"constraint C1 added")
+
+    # C2
+    for i in range(n):
+        for k in range(m):
+            solver.add(Y[k][i] == sf.at_least_one_T([X[k][i][j] for j in range(n+1) if i != j]))
+            solver.add(Y[k][i] == sf.at_least_one_T([X[k][j][i] for j in range(n+1) if i != j]))   
+            if time_limit - (time.time()-start_time) < 0:
+                return     
+
+    # C2.5
+    for i in range(n):
+        solver.add(sf.exactly_one_T([Y[k][i] for k in range(m)]))
+        if time_limit - (time.time()-start_time) < 0:
+                return
+
+    if verbose:
+        print(f"constraint C2 added")
+
+    # C3
     for k in range(m):
-        solver.add(sf.at_most_one_T([X[k][j][i] for j in range(n+1) if i != j]))
+        sizes_b = [sb[i] for i in range(n)]
+        solver.add(sf.lte(sf.masked_sum_n(sizes_b, Y[k]), lb[k]))
+        if time_limit - (time.time()-start_time) < 0:
+                return
 
-if verbose:
-    print(f"constraint C1 added")
+    if verbose:
+        print(f"constraint C3 added")
 
-# C2
-for i in range(n):
+    # C4
     for k in range(m):
-        solver.add(Y[k][i] == sf.at_least_one_T([X[k][i][j] for j in range(n+1) if i != j]))
-        solver.add(Y[k][i] == sf.at_least_one_T([X[k][j][i] for j in range(n+1) if i != j]))        
+        solver.add(sf.exactly_one_T([X[k][n][j] for j in range(n)]))
+        solver.add(sf.exactly_one_T([X[k][i][n] for i in range(n)]))
+        solver.add(sf.at_least_one_T([Y[k][i] for i in range(n)]))
+        if time_limit - (time.time()-start_time) < 0:
+                return
 
-# C2.5
-for i in range(n):
-    solver.add(sf.exactly_one_T([Y[k][i] for k in range(m)]))
+    if verbose:
+        print(f"constraint C4 added")
 
-if verbose:
-    print(f"constraint C2 added")
-
-# C3
-for k in range(m):
-    sizes_b = [sb[i] for i in range(n)]
-    mask = Y[k]
-    solver.add(sf.lte(sf.masked_sum_n(sizes_b, Y[k]), lb[k]))
-
-if verbose:
-    print(f"constraint C3 added")
-
-# C4
-for k in range(m):
-    solver.add(sf.exactly_one_T([X[k][n][j] for j in range(n)]))
-    solver.add(sf.exactly_one_T([X[k][i][n] for i in range(n)]))
-    solver.add(sf.at_least_one_T([Y[k][i] for i in range(n)]))
-
-if verbose:
-    print(f"constraint C4 added")
-
-# C5
-if time_limit - floor(time.time() - start_time) > 0:
+    # C5
     for i in range(n):
         for j in range(n):
             if i != j:
                 arc_traversed = sf.at_least_one_T([X[k][i][j] for k in range(m)])
                 solver.add(Implies(arc_traversed, sf.gt(U[j], U[i])))
+                if time_limit - (time.time()-start_time) < 0:
+                    return
 
-if verbose:
-    print(f"constraint C5 added")
+    if verbose:
+        print(f"constraint C5 added")
 
-# cost constraints
-if time_limit - floor(time.time() - start_time) > 0:
+    # cost constraints
     for k in range(m):
         for j in range(n):
             solver.add(Implies(X[k][n][j], sf.eq(Db[n][j], StartCost[k])))
+            if time_limit - (time.time()-start_time) < 0:
+                return
 
     for k in range(m):
         for i in range(n):
@@ -148,15 +158,19 @@ if time_limit - floor(time.time() - start_time) > 0:
             for j in range(n+1):
                 if i != j:
                     solver.add(Implies(X[k][i][j], sf.eq(D[i][j], DepCost[k][i])))
+                    if time_limit - (time.time()-start_time) < 0:
+                        return
 
     for k in range(m):
         solver.add(sf.eq(C[k], sf.sum_b_list([DepCost[k][i] for i in range(n)]+[StartCost[k]])))
+        if time_limit - (time.time()-start_time) < 0:
+            return
 
     solver.add(sf.max_elem([C[k] for k in range(m)], MaxCost))
     solver.add(sf.gte(MaxCost, sf.int2boolList(LB)))
 
-if verbose:
-    print(f"cost constraints added")
+start_time = time.time()
+add_constraints(solver)
 
 if verbose:
     print(f"Time spent for constraints: {time.time() - start_time}")
@@ -202,12 +216,18 @@ def print_accs(k):
     dc = [sf.bool2int([model[DepCost[k][i][q]] for q in range(len(DepCost[k][i]))]) for i in range(n)]
     print(f"Departure cost accs: {dc}")
 
-if strategy == 'binary':
-    model, search_time = binary_search(UB, LB, MaxCost, solver, remaining_time, verbose)
-elif strategy == 'sequential':
-    model, search_time = seqential_search(UB, LB, MaxCost, solver, remaining_time, verbose)
+# solving
+if remaining_time > 0:
+    if strategy == 'binary':
+        model, search_time = binary_search(UB, LB, MaxCost, solver, remaining_time, verbose)
+    elif strategy == 'sequential':
+        model, search_time = seqential_search(UB, LB, MaxCost, solver, remaining_time, verbose)
+    else:
+        raise Exception("Invalid strategy argument")
 else:
-    raise Exception("Invalid strategy argument")
+    model = None
+    const_time = time_limit
+    search_time = 0
 
 def getSolution():
     if model is None:

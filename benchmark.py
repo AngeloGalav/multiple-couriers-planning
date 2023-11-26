@@ -9,15 +9,13 @@ from argparse import ArgumentParser
 parser = ArgumentParser()
 parser.add_argument("-i", "--instance", type=int, default=3)
 parser.add_argument('-a', '--all', action='store_true')
-parser.add_argument("-f", "--file", type=str, default=None)
 parser.add_argument("-mf", "--model-family", type=str, choices=["SAT", "CP", "SMT", "MIP"], default=None)
 
 args = parser.parse_args()._get_kwargs()
+
 instance_id = args[0][1]
 run_all = args[1][1]
-inst_file = './instances/'+"inst"+str(instance_id).zfill(2)+".dat"
-file = args[2][1]
-model_family = args[3][1]
+model_family = args[2][1]
 
 # definitions
 models = {"SAT" : ["SAT/SAT_cplike.py", "SAT/SAT_miplike_acc.py"],
@@ -34,8 +32,12 @@ def run_model(instance, opts, model) :
     try:
         print("\n--- Running ", model,
                 " on instance ", instance, " with args ", opts, " ---\n")
-        cmd = ['python', model, "-i", str(instance)]
-        cmd.extend(opts.split(' '))
+        cmd = ['python3', model, "-i", str(instance)]
+
+        if opts != "" :
+            cmd.extend(opts.split(' '))
+
+        print(cmd)
         subprocess.run(cmd)
         print("Done!")
     except Exception as e:
