@@ -6,6 +6,8 @@ import numpy as np
 import time
 from sat_utils import *
 from itertools import combinations
+sys.path.append('./')
+from utils import print_input
 
 time_limit, instance, verbose, strategy = get_args()
 m,n,l,s,D,LB,UB = get_input(instance)
@@ -120,31 +122,6 @@ const_time = time.time() - start_time
 remaining_time = max(0, time_limit - floor(time.time() - start_time))
 
 # visualization
-def print_costs():
-    print(np.array(
-        [[D[i][j] for j in range(n+1)] for i in range(n+1)]
-    ))
-    print()
-
-def print_sizes():
-    print("sizes:")
-    print(np.array(
-        [s[i] for i in range(n)]
-    ))
-    print()
-
-def print_maxloads():
-    print("maxloads:") 
-    print(np.array(
-        [l[i] for i in range(m)]
-    ))
-    print()
-
-def print_input():
-    print_costs()
-    print_sizes()
-    print_maxloads()
-
 def print_accs(k):
     sc = [model[StartCost[k][i]] for i in range(len(StartCost[k]))]
     print(f"Start cost acc: {sf.bool2int(sc)}")
@@ -193,5 +170,5 @@ def getSolution():
 save_solution(instance, name, getSolution())
 
 if verbose and model is not None:
-    print_input()
+    print_input(D, s, l)
     print_solution(model)
