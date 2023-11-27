@@ -9,13 +9,13 @@ import time
 from pysmt.smtlib.parser import SmtLibParser
 from pysmt.shortcuts import Solver,get_model
 from math import ceil
-from pysmt.shortcuts import Symbol, And, GE, LT, Plus, Equals, Int, get_model, Or, Not, Implies, GT, LE, EqualsOrIff
-from pysmt.typing import INT,BOOL
+from pysmt.shortcuts import Symbol, And, GE, Plus, Or, Not, Implies, GT, LE, EqualsOrIff, Int
+from pysmt.typing import INT
 
 
 # --- ARGS ---
 parser = ArgumentParser()
-parser.add_argument("-s", "--solver", type=str, choices=['Z3'], default='Z3')
+parser.add_argument("-s", "--solver", type=str, choices=['z3','msat'], default='z3')
 parser.add_argument("-t", "--timelimit", type=int, default=300)
 parser.add_argument("-i", "--instance", type=int, default=1)
 
@@ -98,144 +98,6 @@ we don't do it in SAT, since it saves the solver some additional constraints (as
 use LB in the binary search)
 '''
 
-'''solver = z3.Solver()
-
-X={}
-Y={}
-U={}
-C={}
-M={}
-M2 = {}
-MaxCost = z3.Int(f"MaxCost")
-
-for i in range(n+1):
-    for j in range(n+1):
-        for k in range(m):
-            if i!=j:
-                X[i, j, k] = Bool(f"X_{i},{j},{k}")
-                M2[i, j, k]= z3.Int(f"M_{i}{j}{k}")
-
-for i in range(n):
-    for k in range(m):
-        Y[i, k] = Bool(f"Y_{i},{k}")
-        M[i, k] = z3.Int(f"M_{i},{k}")
-
-for i in range(n):
-    U[i] = z3.Int(f"U_{i}")
-
-for k in range(m):
-    C[k] = z3.Int(f"C_{k}")
-
-# constraints declaration
-start_time = time.time()
-print(m,n)
-# C1
-print('Adding C1...')
-for i in range(n):
-    solver.add(z3.Or([X[i, j, k] for j in range(n+1) if i != j for k in range(m)]))
-
-for j in range(n):
-    solver.add(z3.Or([X[i, j, k] for i in range(n+1) if i != j for k in range(m)]))
-    for k in range(m):
-        solver.add(at_most_one_T([X[i,j,k] for j in range(n+1) if i != j]))
-
-# C2
-print('Adding C2...')
-for i in range(n):
-    for k in range(m):
-        solver.add(Y[i, k] == z3.Or([X[i, j, k] for j in range(n+1) if i != j]))
-
-for j in range(n):
-    for k in range(m):
-        solver.add(Y[j, k] == z3.Or([X[i, j, k] for i in range(n+1) if i != j]))
-
-# C3
-print('Adding C3...')
-for k in range(m):
-    for i in range(n):
-        solver.add(z3.Implies(Y[i,k],M[i,k]==s[i]))
-        solver.add(z3.Implies(z3.Not(Y[i,k]),M[i,k]==0))
-    solver.add(l[k]>=z3.Sum([M[i,k] for i in range(n)]))
-
-# C4
-print('Adding C4...')
-for k in range(m):
-    solver.add(exactly_one_T([X[n, j, k] for j in range(n)]))
-    solver.add(exactly_one_T([X[i, n, k] for i in range(n)]))
-    solver.add(z3.Or([Y[i,k] for i in range(n)]))
-
-# C5
-print('Adding C5...')
-for k in range(m):
-    for i in range(n):
-        for j in range(n):
-            if i != j:
-                solver.add(Implies(X[i, j, k], (U[j] > U[i])))
-
-# cost constraints
-print('Adding cost-constraint...')
-for i in range(n+1):
-    for j in range(n+1):
-        for k in range(m):
-            if i!=j:
-                solver.add(z3.Implies(X[i,j,k],M2[i,j,k]==D[i][j]))
-                solver.add(z3.Implies(z3.Not(X[i,j,k]),M2[i,j,k]==0))
-
-
-for k in range(m):
-    solver.add(C[k]==z3.Sum([M2[i,j,k] for i in range(n+1) for j in range(n+1) if i!=j]))
-    solver.add(MaxCost>=C[k])
-solver.add(at_least_one_T([MaxCost==C[k] for k in range(m)]))
-solver.add(MaxCost>=low)
-solver.add(MaxCost<=high)
-
-bestModel = None
-print('Start searching...')
-# binary search for the minimum cost solution
-while high > low:
-    if time.time()-start_time>time_limit:
-        break
-    mid = (high + low)//2
-    solver.set('timeout',ceil(time.time()-start_time)*1000)
-    res = solver.check(MaxCost<=mid)
-    if res == z3.sat:
-        print(f"Sat for {mid}")
-        bestModel = solver.model()
-        high = bestModel[MaxCost].as_long()
-    else:
-        print(f"Unsat for {mid}")
-        low = mid+1
-    #print()
-
-t = time.time() - start_time
-def getSolution(best, n, m, t):
-    if t >= time_limit - 1:
-        t = time_limit
-    if best is None:
-        obj = 0
-        sol = "N/A"
-    else:
-        obj = best[MaxCost].as_long()
-        sol = []
-        for k in range(m):
-            path = []
-            current = n
-            dest = 0
-            path = []
-            while(dest != n):
-                dest = 0
-                while(current == dest or best[X[current, dest, k]] == False):
-                    dest += 1
-                if dest != n:
-                    path.append(dest+1)
-                    current = dest
-            sol.append(path)
-    return t, obj, sol
-
-saveAsJson(str(instance), solv_arg, "./res/SMT/", getSolution(bestModel, n, m, t))'''
-
-
-
 X={}
 Y={}
 U={}
@@ -248,7 +110,7 @@ for i in range(n+1):
     for j in range(n+1):
         for k in range(m):
             if i!=j:
-                X[i, j, k] = Symbol(f"X_{i},{j},{k}")
+                X[i, j, k] = Symbol(f"X_{i}_{j}_{k}")
                 M2[i, j, k]= Symbol(f"M2_{i}_{j}_{k}",INT)
 
 for i in range(n):
@@ -264,7 +126,7 @@ for k in range(m):
 
     #--CONSTRAINTS--
     start_time = time.time()
-    solver=Solver()
+    solver=Solver(name=solv_arg)
 
 # C1
 print('Adding C1...')
@@ -350,8 +212,8 @@ while high > low:
         print(f"Unsat for {mid}")
         low = mid+1
     #print()
-
 t = time.time() - start_time
+
 def getSolution(best, n, m, t):
     if t >= time_limit - 1:
         t = time_limit
@@ -359,7 +221,7 @@ def getSolution(best, n, m, t):
         obj = 0
         sol = "N/A"
     else:
-        obj = best.get_value(MaxCost)
+        obj = int(best.get_value(MaxCost).constant_value())
         sol = []
         for k in range(m):
             path = []
@@ -368,12 +230,12 @@ def getSolution(best, n, m, t):
             path = []
             while(dest != n):
                 dest = 0
-                while(current == dest or best.get_value(X[current, dest, k]) == False):
+                while(current == dest or best.get_value(X[current, dest, k]).constant_value() == False):
                     dest += 1
                 if dest != n:
                     path.append(dest+1)
                     current = dest
             sol.append(path)
     return t, obj, sol
-
-saveAsJson(str(instance), solv_arg, "./res/SMT/", getSolution(bestModel, n, m, t))
+print(getSolution(bestModel, n, m, t))
+saveAsJson(str(instance), solv_arg, "./res/SMT/solver_ind", getSolution(bestModel, n, m, t))
