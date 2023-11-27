@@ -26,15 +26,15 @@ for each j in 1..n, for each k in 1..m: Y[j, k] <-> AtLeastOne(i in 1..n+1){X[i,
 
 -- C2.5 --
 each item is assigned to exactly one courier
-
 for each i in 1..n: ExaxtlyOne(k in 1..m){Y[i, k]}
 
 -- C3 --
 for each k in 1..m: sum(i in 1..n){s[i]*Y[i, k]} <= l[k]
 
 -- C4 --
-for each k in 1..m: AtMostOne(j in 1..n){X[n+1, j, k]} //each courier leaves the origin once
-for each k in 1..m: AtMostOne(i in 1..n){X[i, n+1, k]} //each courier arrives at the origin once
+for each k in 1..m: AtMostOne(j in 1..n){X[n+1, j, k]} //each courier leaves the origin at most once
+for each k in 1..m: AtMostOne(i in 1..n){X[i, n+1, k]} //each courier arrives at the origin at least once
+for each k in 1..k: AtLeastOne(i in 1..n){Y[i, k]} //each courier delivers atleast one item
 
 -- C5 --
 for each k in 1..m, for each i in 1..n, for each j in 1..n (j != i): X[i, j, k] -> GreaterThan(U[j], U[i])

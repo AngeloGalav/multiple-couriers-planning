@@ -142,6 +142,6 @@ def getSolution():
 
 saveAsJson(str(instance), name, "./res/SMT/", getSolution())
 
-if verbose:
+if verbose and model is not None:
     print_input(D, s, l)
     print_solution(model)
