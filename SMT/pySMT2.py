@@ -15,7 +15,7 @@ from pysmt.typing import INT
 
 # --- ARGS ---
 parser = ArgumentParser()
-parser.add_argument("-s", "--solver", type=str, choices=['z3','msat'], default='z3')
+parser.add_argument("-s", "--solver", type=str, choices=['z3','msat','cvc4'], default='z3')
 parser.add_argument("-t", "--timelimit", type=int, default=300)
 parser.add_argument("-i", "--instance", type=int, default=1)
 
@@ -237,5 +237,5 @@ def getSolution(best, n, m, t):
                     current = dest
             sol.append(path)
     return t, obj, sol
-print(getSolution(bestModel, n, m, t))
+#print(getSolution(bestModel, n, m, t))
 saveAsJson(str(instance), solv_arg, "./res/SMT/solver_ind", getSolution(bestModel, n, m, t))

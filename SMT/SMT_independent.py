@@ -6,17 +6,16 @@ sys.path.append('./')
 from data_handlers import saveAsJson, computeBounds, parseInstance
 from argparse import ArgumentParser
 import time
-from pysmt.smtlib.parser import SmtLibParser
 from pysmt.shortcuts import Solver,get_model
 from math import ceil
-from pysmt.shortcuts import Symbol, And, GE, Plus, Or, Not, Implies, GT, LE, EqualsOrIff, Int
+from pysmt.shortcuts import Symbol, And, GE, Plus, Or, Not, Implies, GT, LE, EqualsOrIff, Int, Ite
 from pysmt.typing import INT
 
 
 # --- ARGS ---
 parser = ArgumentParser()
 parser.add_argument("-t", "--timelimit", type=int, default=300)
-parser.add_argument("-i", "--instance", type=int, default=3)
+parser.add_argument("-i", "--instance", type=int, default=1)
 parser.add_argument("-v", "--verbose", action='store_true')
 parser.add_argument("-s", "--solver", type=str, choices=['z3','msat','cvc4'], default='z3')
 
@@ -35,6 +34,30 @@ name = "miplike"
 
 
 #at most 1  (max 1 T)
+def getSolution(best, n, m, t):
+    if t >= time_limit - 1:
+        t = time_limit
+    if best is None:
+        obj = 0
+        sol = "N/A"
+    else:
+        obj = int(best.get_value(MaxCost).constant_value())
+        sol = []
+        for k in range(m):
+            path = []
+            current = n
+            dest = 0
+            path = []
+            while(dest != n):
+                dest = 0
+                while(current == dest or best.get_value(X[k][current][ dest]).constant_value() == False):
+                    dest += 1
+                if dest != n:
+                    path.append(dest+1)
+                    current = dest
+            sol.append(path)
+    return t, obj, sol
+
 def at_most_one_T(bools):
     if len(bools) <= 4: # base case
         return And([Not(And(b1, b2)) for b1, b2 in combinations(bools, 2)])
@@ -61,6 +84,9 @@ U = [Symbol(f"U_{i}",INT) for i in range(n)]
 C = [Symbol(f"C_{k}",INT) for k in range(m)]
 MaxCost = Symbol('MaxCost',INT)
 
+start_time = time.time()
+solver=Solver(name=solv_arg)
+
 def add_constraints(solver):
     # domains
     for i in range(n):
@@ -83,8 +109,8 @@ def add_constraints(solver):
     # C2
     for i in range(n):
         for k in range(m):
-            solver.add(Y[k][i] == sf.at_least_one_T([X[k][i][j] for j in range(n+1) if i != j]))
-            solver.add(Y[k][i] == sf.at_least_one_T([X[k][j][i] for j in range(n+1) if i != j]))   
+            solver.add_assertion(EqualsOrIff(Y[k][i], Or([X[k][i][j] for j in range(n+1) if i != j])))
+            solver.add_assertion(EqualsOrIff(Y[k][i], Or([X[k][j][i] for j in range(n+1) if i != j])))  
             if time_limit - (time.time()-start_time) < 0:
                 return     
 
@@ -99,7 +125,7 @@ def add_constraints(solver):
 
     # C3
     for k in range(m):
-        solver.add_assertion(Plus([If(Y[k][i], s[i], 0) for i in range(n)]) <= l[k])      #NON SO COME TRADURLO IN PYSMT
+        solver.add_assertion(Plus([Ite(Y[k][i], Int(s[i]), Int(0)) for i in range(n)]) <= Int(l[k]))
         if time_limit - (time.time()-start_time) < 0:
                 return
 
@@ -130,59 +156,35 @@ def add_constraints(solver):
         print(f"constraint C5 added")
 
     for k in range(m):
-        solver.add_assertion(EqualsOrIff(C[k], Plus([If(X[k][i][j], D[i][j], 0) for i in range(n+1) for j in range(n+1) if i != j])))     #NEMMENO QUESTO
+        solver.add_assertion(EqualsOrIff(C[k], Plus([Ite(X[k][i][j], Int(D[i][j]), Int(0)) for i in range(n+1) for j in range(n+1) if i != j])))
         solver.add_assertion(GE(MaxCost, C[k]))
 
     solver.add_assertion(Or([EqualsOrIff(MaxCost, C[k]) for k in range(m)]))
-    solver.add_assertion(LE(MaxCost, UB))
-    solver.add_assertion(GE(MaxCost, LB))
+    solver.add_assertion(LE(MaxCost, Int(UB)))
+    solver.add_assertion(GE(MaxCost, Int(LB)))
 bestModel = None
-start_time = time.time()
-solver=Solver(name=solv_arg)
+
 add_constraints(solver)
 if verbose:
     print('Start searching...')
 # binary search for the minimum cost solution
-while high > low:
+while UB > LB:
     if time.time()-start_time>time_limit:
         break
-    mid = (high + low)//2
+    mid = (UB + LB)//2
     solver.push()
     solver.add_assertion(LE(MaxCost,Int(mid)))
-    #solver.set('timeout',ceil(time.time()-start_time)*1000)
     if solver.solve():
-        print(f"Sat for {mid}")
-        bestModel = solver.get_model()
-        high =int(bestModel.get_value(MaxCost).constant_value())
+        if time.time()-start_time<=time_limit:
+            print(f"Sat for {mid}")
+            bestModel = solver.get_model()
+            UB =int(bestModel.get_value(MaxCost).constant_value())
+            #print(getSolution(bestModel, n, m, time_limit))
     else:
         solver.pop()
         print(f"Unsat for {mid}")
-        low = mid+1
+        LB = mid+1
     #print()
 t = time.time() - start_time
 
-def getSolution(best, n, m, t):
-    if t >= time_limit - 1:
-        t = time_limit
-    if best is None:
-        obj = 0
-        sol = "N/A"
-    else:
-        obj = int(best.get_value(MaxCost).constant_value())
-        sol = []
-        for k in range(m):
-            path = []
-            current = n
-            dest = 0
-            path = []
-            while(dest != n):
-                dest = 0
-                while(current == dest or best.get_value(X[current, dest, k]).constant_value() == False):
-                    dest += 1
-                if dest != n:
-                    path.append(dest+1)
-                    current = dest
-            sol.append(path)
-    return t, obj, sol
-#print(getSolution(bestModel, n, m, t))
 saveAsJson(str(instance), solv_arg, "./res/SMT/solver_ind", getSolution(bestModel, n, m, t))
