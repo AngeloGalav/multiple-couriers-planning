@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 from datetime import timedelta
 from data_handlers import computeBounds, get_values_from_dzn, parseInstance
 from data_handlers import saveAsJson
+import numpy as np
 
 timeout = timedelta(seconds=300)
 
@@ -60,6 +61,18 @@ def clean_up_template() :
             with open(template_path, 'w') as file:
                 file.write(replaced_text)
 
+def getSolution(solution):
+    x_vals = np.array(solution.x, dtype=np.int32)
+    tour_vals = np.array(solution.tour, dtype=np.int32)
+    sol = []
+    for k in range(max(x_vals)):
+        tour_k = tour_vals.copy()
+        tour_k[x_vals != k+1] = len(solution.tour)+2
+        tour_k = tour_k.argsort() + 1
+        count = len(x_vals[x_vals == k+1])
+        sol.append(tour_k[:count].tolist())
+    return sol
+    
 def run_cp_instance(model, solverName, dataFile, heur_info=None) :
     # model = Model(modelFile)
     solver = Solver.lookup(solverName)
@@ -89,7 +102,6 @@ def run_cp_instance(model, solverName, dataFile, heur_info=None) :
 
     total_time = end-start
 
-    print(result.solution.x, result.solution.objective)
     print("Time:", total_time)
 
     solv_info = ''
@@ -102,10 +114,10 @@ def run_cp_instance(model, solverName, dataFile, heur_info=None) :
     # save as json with instance name
     if result.solution != None :
         saveAsJson(str(instance_id), solv_info, "res/CP/",
-                (total_time, result.solution.objective, result.solution.x))
+                (total_time, result.solution.objective, getSolution(result.solution)))
     else :
         saveAsJson(str(instance_id), solv_info, "res/CP/",
-                (total_time, "M", result.solution.x))
+                (300, 0, "N/A"))
 
 
 def modify_model_heuristics(modelFile, strategy_choice,
