@@ -30,7 +30,7 @@ inst_name = "inst"+str(instance).zfill(2)+".dat"
 m,n,l,s,D = parseInstance('./instances/'+inst_name)
 LB, UB = computeBounds(D, m, n)
 
-name = "miplike"
+name = "miplike_ind_"+solv_arg
 
 
 #at most 1  (max 1 T)
