@@ -187,4 +187,4 @@ while UB > LB:
     #print()
 t = time.time() - start_time
 
-saveAsJson(str(instance), solv_arg, "./res/SMT/solver_ind", getSolution(bestModel, n, m, t))
+saveAsJson(str(instance), solv_arg, "./res/SMT/", getSolution(bestModel, n, m, t))
