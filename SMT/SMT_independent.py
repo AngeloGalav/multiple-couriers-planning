@@ -57,7 +57,7 @@ def getSolution(best, n, m, t):
                     path.append(dest+1)
                     current = dest
             sol.append(path)
-    return t, obj, sol
+    return round(t,2), obj, sol
 
 def at_most_one_T(bools):
     if len(bools) <= 4: # base case
