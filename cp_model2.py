@@ -15,8 +15,8 @@ heuristics = ["indomain_min", "indomain_median", "indomain_random", "indomain_sp
 restarts = ["::restart_linear(<scale>)", "::restart_geometric(<base>,<scale>)", "::restart_luby(<scale>)", "restart_none"]
 solvers = ["gecode", "chuffed"]
 """
-strategies = ["first_fail", "smallest", "dom_w_deg"]
-heuristics = ["indomain_min", "indomain_median", "indomain_random", "indomain_split"]
+strategies = ["first_fail"]
+heuristics = ["indomain_min", "indomain_split"]
 restarts = ["restart_linear(<scale>)", "restart_none"]
 solvers = ["gecode"]
 
@@ -95,11 +95,11 @@ def run_cp_instance(model, solverName, dataFile, heur_info=None) :
     instance["LB"] = LB
     instance["UB"] = UB
 
+    start_time = time.time()
     result = instance.solve(timeout=timeout)
+    flat_time = time.time()-start_time
 
-    time = round((result.statistics['initTime']+result.statistics['solveTime']).total_seconds(), 2)
-
-    print("Time:", time)
+    print("Flat time:", flat_time)
 
     solv_info = ''
     if heur_info != None :
@@ -109,11 +109,13 @@ def run_cp_instance(model, solverName, dataFile, heur_info=None) :
         solv_info = solverName
 
     # save as json with instance name
-    if result != None :
-        if time > 295:
-            time = 300
+    if result != None and result.solution != None:
+        print(result.solution)
+        time_search = round((result.statistics['initTime']+result.statistics['solveTime']).total_seconds(), 2)
+        if flat_time > 295:
+            time_search = 300
         saveAsJson(str(instance_id), solv_info, "res/CP/",
-                (time, result.solution.cost, getSolution(result.solution)))
+                (time_search, result.solution.cost, getSolution(result.solution)))
     else :
         saveAsJson(str(instance_id), solv_info, "res/CP/",
                 (300, 0, "N/A"))
