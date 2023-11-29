@@ -8,10 +8,10 @@ from argparse import ArgumentParser
 import time
 from pysmt.shortcuts import Solver,get_model
 from math import ceil
-from pysmt.shortcuts import Symbol, And, GE, Plus, Or, Not, Implies, GT, LE, EqualsOrIff, Int, Ite
+from pysmt.shortcuts import Symbol, And, GE, Plus, Or, Not, Implies, GT, LE, EqualsOrIff, Int, Ite, Equals
 from pysmt.typing import INT
-import threading
-
+from pebble import concurrent
+from concurrent.futures import TimeoutError
 
 # --- ARGS ---
 parser = ArgumentParser()
@@ -42,7 +42,7 @@ def getSolution(best, n, m, t):
         obj = 0
         sol = "N/A"
     else:
-        obj = int(best.get_value(MaxCost).constant_value())
+        obj = int(best['obj'])
         sol = []
         for k in range(m):
             path = []
@@ -51,13 +51,13 @@ def getSolution(best, n, m, t):
             path = []
             while(dest != n):
                 dest = 0
-                while(current == dest or best.get_value(X[k][current][ dest]).constant_value() == False):
+                while(current == dest or best[f'X_{k}_{current}_{dest}'] == False):
                     dest += 1
                 if dest != n:
                     path.append(dest+1)
                     current = dest
             sol.append(path)
-    return round(t,2), obj, sol
+    return t, obj, sol
 
 def at_most_one_T(bools):
     if len(bools) <= 4: # base case
@@ -165,40 +165,52 @@ def add_constraints(solver):
     solver.add_assertion(GE(MaxCost, Int(LB)))
 bestModel = None
 
-def solve_with_timeout():
-    global result
-    result = solver.solve()
-lock = threading.Lock()
-
 add_constraints(solver)
 if verbose:
     print('Start searching...')
 # binary search for the minimum cost solution
-import os
 while UB > LB:
     if time.time()-start_time>time_limit:
         break
     mid = (UB + LB)//2
     solver.push()
     solver.add_assertion(LE(MaxCost,Int(mid)))
-    solver_thread = threading.Thread(target=solve_with_timeout)
-    solver_thread.start()
-    solver_thread.join(timeout=time_limit-time.time()+start_time)
-    if solver_thread.is_alive():
-        print('timeout. Terminating...')
-        saveAsJson(str(instance), solv_arg, "./res/SMT/", getSolution(bestModel, n, m, time_limit-time.time()+start_time))
-        sys.exit()
-    else:
-        if result:
-            print(f"Sat for {mid}")
-            bestModel = solver.get_model()
-            UB =int(bestModel.get_value(MaxCost).constant_value())
-            #print(getSolution(bestModel, n, m, time_limit))
-        else:
-            solver.pop()
-            print(f"Unsat for {mid}")
-            LB = mid+1
 
+    remaining_time = ceil(time_limit-(time.time()-start_time))
+
+    @concurrent.process(timeout=remaining_time)
+    def run():
+        res = solver.solve()
+        vals = None
+        if res:
+            model = solver.get_model()
+            vals = {}
+            vals['obj'] = model.get_value(MaxCost).constant_value()
+            
+            for k in range(m):
+                for i in range(n+1):
+                    for j in range(n+1):
+                        if i != j:
+                            symbol = model.environment._formula_manager.get_symbol(f'X_{k}_{i}_{j}')
+                            vals[f'X_{k}_{i}_{j}'] = model.get_value(symbol).constant_value()
+
+        return res, vals
+    future = run()
+    try:
+        res, model = future.result()
+    except TimeoutError:
+        break
+
+    if res:
+        print(f"Sat for {mid}")
+        bestModel = model
+        UB =int(model['obj'])
+        #print(getSolution(bestModel, n, m, time_limit))
+    else:
+        solver.pop()
+        print(f"Unsat for {mid}")
+        LB = mid+1
+    #print()
 t = time.time() - start_time
 
 saveAsJson(str(instance), solv_arg, "./res/SMT/", getSolution(bestModel, n, m, t))
