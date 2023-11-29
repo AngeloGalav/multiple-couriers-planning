@@ -15,9 +15,9 @@ heuristics = ["indomain_min", "indomain_median", "indomain_random", "indomain_sp
 restarts = ["::restart_linear(<scale>)", "::restart_geometric(<base>,<scale>)", "::restart_luby(<scale>)", "restart_none"]
 solvers = ["gecode", "chuffed"]
 """
-strategies = ["input_order", "first_fail", "smallest", "dom_w_deg"]
+strategies = ["first_fail", "smallest", "dom_w_deg"]
 heuristics = ["indomain_min", "indomain_median", "indomain_random", "indomain_split"]
-restarts = [""]
+restarts = ["restart_linear(<scale>)", "restart_none"]
 solvers = ["gecode"]
 
 
@@ -29,7 +29,7 @@ parser.add_argument("-he", "--heuristic", type=str,
                     choices=["min", "median", "random", "split"], default='min')
 parser.add_argument("-r", "--restart", type=str,
                     choices=["linear", "geometric", "luby", "none"], default="linear")
-parser.add_argument("-sc", "--scale", type=int, default=2)
+parser.add_argument("-sc", "--scale", type=int, default=5)
 parser.add_argument("-b", "--base", type=int, default=2)
 parser.add_argument("-i", "--instance", type=int, default=3)
 parser.add_argument('-a', '--all', action='store_true')
@@ -44,7 +44,7 @@ run_all_ = args[6][1]
 
 template_path = "CP/model_2.mzn"
 replace_template = """%annotations here
-solve :: int_search(tour, <strat>, <indom_heur>) minimize cost<restart>;"""
+solve :: int_search(tour, <strat>, <indom_heur>) minimize cost :: <restart>;"""
 
 def clean_up_template() :
     # tidying up
@@ -66,11 +66,10 @@ def getSolution(solution):
     x_vals = np.array(solution.x, dtype=np.int32)
     tour_vals = np.array(solution.tour, dtype=np.int32)
     seg_vals = np.array(solution.seg, dtype=np.int32)
-    count_vals = np.array(solution.counter, dtype=np.int32)
-    print(x_vals, tour_vals, seg_vals, count_vals)
+    count_vals = np.array(solution.count, dtype=np.int32)
     sol = []
     for i in range(len(seg_vals)-1):
-        sol.append(tour_vals[seg_vals[i]-1:seg_vals[i+1]-1].tolist())
+        sol.append(tour_vals[seg_vals[i]:seg_vals[i+1]-1].tolist())
     return sol
     
 def run_cp_instance(model, solverName, dataFile, heur_info=None) :
