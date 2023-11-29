@@ -6,6 +6,8 @@ int: n; % number of items
 array[1..m] of int: l; % maximum load size for each courier
 array[1..n] of int: s; % size of each item
 array[1..n+1, 1..n+1] of int: D; % distance matrix
+int: LB;
+int: UB;
 % Note: D[i,j] is the minimum distance between distribution point i and distribution point j
 
 /* The idea of this second model is to remove the useless decision variables we have in the original version
@@ -39,13 +41,17 @@ array[1..m+1] of var 1..n+1: seg; /* seg[1..m] defines the starting indexes of t
 and seg[m+1] = n+1, so that we can access the i-th segment of tour through slicing with 
 tour[seg[i]..seg[i+1]-1]*/
 
+var LB..UB: cost;
+
 % CONSTRAINT DEFINITION
 
 /* C1 - The total weight of items transported by a courier must be lower or equal than the courier's 
 maximum laod. We use vaiable x to define this constraint. */
-constraint forall(i in 1..m) (
-  sum(j in 1..n where x[j] == i) (s[j]) <= l[i]
-);
+% constraint forall(i in 1..m) (
+%   sum(j in 1..n where x[j] == i) (s[j]) <= l[i]
+% );
+constraint bin_packing_capa(l, x, s);
+
 
 /* C3.1 - Channeling constraint between tour and x (each courier can only deliver the packages specified
 in x, and must deliver all the packages assigned in x)*/
@@ -66,15 +72,19 @@ constraint (
 
 % C4.2 and C4.3 are implied
 
-/* C5 - In each courier's path (segment of tour), each courier must deliver each package only once.*/
+/* C5 - Each package is delivered only once*/
 constraint alldifferent(tour);
 
-var int: lossf = max([sum(k in seg[i]..seg[i+1]-2)(D[tour[k], tour[k+1]]) + D[n+1, tour[seg[i]]] + D[tour[seg[i+1]-1], n+1] | i in 1..m]); % minimize the maximum distance traveled by any courier
+constraint cost = max([sum(k in seg[i]..seg[i+1]-2)(D[tour[k], tour[k+1]]) + D[n+1, tour[seg[i]]] + D[tour[seg[i+1]-1], n+1] | i in 1..m]);
 
-% Solve the problem
-solve minimize lossf;
+%solve :: int_search(tour, dom_w_deg, indomain_min) minimize cost :: restart_luby(2);
 
-output ["Solution:\n"];
-output ["x = \(x)\n"];
-output ["tour = \(tour)\n"];
-output ["Loss = \(lossf)\n\n"];
+%annotations here
+solve :: int_search(tour, input_order, indomain_min) minimize cost;
+
+
+% output ["Solution:\n"];
+% output ["x =    \(x)\n"];
+% output ["tour = \(tour)\n"];
+% output ["seg = \(seg)\n"];
+% output ["objective = \(cost)\n\n"];

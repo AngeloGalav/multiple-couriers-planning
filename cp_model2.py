@@ -17,8 +17,8 @@ solvers = ["gecode", "chuffed"]
 """
 strategies = ["input_order", "first_fail", "smallest", "dom_w_deg"]
 heuristics = ["indomain_min", "indomain_median", "indomain_random", "indomain_split"]
-restarts = ["::restart_linear(<scale>)", "::restart_geometric(<base>,<scale>)", "::restart_luby(<scale>)", "restart_none"]
-solvers = ["gecode", "chuffed"]
+restarts = [""]
+solvers = ["gecode"]
 
 
 # --- ARGS ---
@@ -44,7 +44,7 @@ run_all_ = args[6][1]
 
 template_path = "CP/model_2.mzn"
 replace_template = """%annotations here
-solve :: int_search(tour, dom_w_deg, indomain_min) minimize cost <restart>;"""
+solve :: int_search(tour, <strat>, <indom_heur>) minimize cost<restart>;"""
 
 def clean_up_template() :
     # tidying up
@@ -126,13 +126,11 @@ def modify_model_heuristics(modelFile, strategy_choice,
     to_replace = replace_template
     to_replace = to_replace.replace("<strat>", strategy_choice)
     to_replace = to_replace.replace("<indom_heur>", heuristic_choice)
-    if restart_choice == None :
-        to_replace = to_replace.replace("<restart>", "")
-    else :
-        to_replace = to_replace.replace("<restart>", restart_choice)
-        if 'restart_geometric' in restart_choice :
-            to_replace = to_replace.replace("<base>", str(restart_base))
-        to_replace = to_replace.replace("<scale>", str(restart_scale))
+    
+    to_replace = to_replace.replace("<restart>", restart_choice)
+    if 'restart_geometric' in restart_choice :
+        to_replace = to_replace.replace("<base>", str(restart_base))
+    to_replace = to_replace.replace("<scale>", str(restart_scale))
 
     # actually reading the file
     with open(modelFile, 'r') as file:

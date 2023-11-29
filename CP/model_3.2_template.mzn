@@ -1,4 +1,4 @@
-include "alldifferent.mzn"; % we could include the used globals individually
+include "globals.mzn"; % we could include the used globals individually
 
 % Define the input data
 int: m; % number of couriers
@@ -43,9 +43,7 @@ breaking constraints
 */
 
 % C1
-constraint forall(i in 1..m) (
-  sum(j in 1..n where x[j] == i) (s[j]) <= l[i]
-);
+constraint bin_packing_capa(l, x, s);
 
 % C2
 constraint forall(i in 1..m) (
@@ -57,7 +55,7 @@ constraint forall(i in 1..m) (
   forall(j in 1..n where x[j] == i) (
     count_leq(x, i, tour[j])
   )
-)::bounds;
+);
   
 % in case two couriers have the same max load, we have a simmetry in the assignment of items
 % we impose that the first item assigned to k1 has lower index than the first item assigned to k2
@@ -74,13 +72,13 @@ constraint symmetry_breaking_constraint(
   )
 );
 
-% in case all the matrix is symmetrical, every path is equivalent to the inverse path
-% we impose that, for a certain path, the item assigned first has smaller index than the item assigned last
-constraint symmetry_breaking_constraint(
-  if forall(i, j in 1..n+1)(D[i, j] == D[j, i])
-  then forall(i, j in 1..n where i!=j /\ x[i]==x[j] /\ tour[i]==1 /\ tour[j]==count(x, i))(i < j)
-  endif
-);
+% % in case all the matrix is symmetrical, every path is equivalent to the inverse path
+% % we impose that, for a certain path, the item assigned first has smaller index than the item assigned last
+% constraint symmetry_breaking_constraint(
+%   if forall(i, j in 1..n+1)(D[i, j] == D[j, i])
+%   then forall(i, j in 1..n where i!=j /\ x[i]==x[j] /\ tour[i]==1 /\ tour[j]==count(x, i))(i < j)
+%   endif
+% );
   
 constraint cost == max([
   sum(j1, j2 in 1..n where tour[j2]-tour[j1] == 1 /\ x[j1] == i /\ x[j2] == i)(D[j1, j2]) + 
@@ -89,6 +87,12 @@ constraint cost == max([
   |i in 1..m]);
 
 %annotations here
+solve
+:: seq_search([
+            int_search(x, input_order, indomain_min),
+            int_search(tour, input_order, indomain_min)]
+            :: restart_linear(2))
+minimize cost;
 
 
 % output ["Solution:\n"];
