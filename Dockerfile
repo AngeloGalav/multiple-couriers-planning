@@ -28,5 +28,5 @@ RUN cp bin/highs /usr/local/bin
 # # solves PEP 668
 RUN rm /usr/lib/python3.11/EXTERNALLY-MANAGED
 
-RUN pip install z3-solver numpy pulp scipy minizinc uuid typing more-itertools
+RUN pip install z3-solver numpy pulp scipy minizinc uuid typing more-itertools pebble
 CMD [ "bash" ]
