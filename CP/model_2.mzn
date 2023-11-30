@@ -6,8 +6,8 @@ int: n; % number of items
 array[1..m] of int: l; % maximum load size for each courier
 array[1..n] of int: s; % size of each item
 array[1..n+1, 1..n+1] of int: D; % distance matrix
-int: LB;
-int: UB;
+%int: LB;
+%int: UB;
 % Note: D[i,j] is the minimum distance between distribution point i and distribution point j
 
 % Define the decision variables
@@ -16,7 +16,7 @@ array[1..n+m+1] of var 1..n+1: tour; % a segment tour[seg[k]..seg[k+1]] defines 
 array[1..m] of var 1..n: count; % count[k] contains the number of items assigned to courier k
 array[1..m+1] of var 1..n+m+1: seg; % seg[k] is the position of the k-th occurrence of n+1 in tour
 
-var LB..UB: cost;
+var 0..500: cost;
 
 % CONSTRAINT DEFINITION
 
@@ -45,6 +45,13 @@ constraint forall(i in 1..n, k in 1..m) (
 
 % C6 - Each package is delivered once (implied constraint)
 constraint alldifferent_except(tour, {n+1});
+
+%couriers with the same load must have a delivery priority
+constraint symmetry_breaking_constraint(
+  forall(k1, k2 in 1..m where l[k1] == l[k2] /\ k1 < k2)(
+    tour[seg[k1+1]]<= tour[seg[k2+1]]
+  )
+);
 
 constraint cost = max([sum(i in seg[k]..seg[k+1]-1)(D[tour[i], tour[i+1]])| k in 1..m]);
 
