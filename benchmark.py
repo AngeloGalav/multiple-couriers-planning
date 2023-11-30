@@ -21,7 +21,7 @@ model_family = args[2][1]
 models = {"SAT" : ["SAT/SAT_cplike.py", "SAT/SAT_miplike_acc.py"],
           "MIP" : ["MIP/mip_model.py"],
           "SMT" : ["SMT/SMT_independent.py"],
-          "CP"  : ["cp_python.py"]}
+          "CP"  : ["cp_model2_symmb.py", "cp_model2.py"]}
 
 opts = {"SAT" : ["-s binary", "-s sequential"],
         "MIP" : ["-s glpk", "-s cbc", "-s scip", "-s highs"],
@@ -32,7 +32,7 @@ def run_model(instance, opts, model) :
     try:
         print("\n--- Running ", model,
                 " on instance ", instance, " with args ", opts, " ---\n")
-        cmd = ['python3', model, "-i", str(instance)]
+        cmd = ['python3', '-W', 'ignore', model, "-i", str(instance)]
 
         if opts != "" :
             cmd.extend(opts.split(' '))
