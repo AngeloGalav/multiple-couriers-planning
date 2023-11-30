@@ -184,10 +184,11 @@ def run():
 
     saveAsJson(str(instance), name, "./res/SMT/", getSolution())
 
-future = run()
+if __name__ == '__main__':
+    future = run()
 
-try:
-    print(f"Process terminated normally: {future.result()}")
-except TimeoutError:
-    print('Process terminated forcefully: time limit reached')
-    saveAsJson(str(instance), name, "./res/SMT/", (time_limit, 0, "N/A"))
+    try:
+        print(f"Process terminated normally: {future.result()}")
+    except TimeoutError:
+        print('Process terminated forcefully: time limit reached')
+        saveAsJson(str(instance), name, "./res/SMT/", (time_limit, 0, "N/A"))

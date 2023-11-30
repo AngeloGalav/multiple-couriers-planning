@@ -151,10 +151,11 @@ def run():
         print_input(D, s, l)
         print_solution(model)
 
-future = run()
+if __name__ == '__main__':
+    future = run()
 
-try:
-    print(f"Process terminated normally: {future.result()}")
-except TimeoutError:
-    print('Process terminated forcefully: time limit reached')
-    saveAsJson(str(instance), name, "./res/SMT/", (time_limit, 0, "N/A"))
+    try:
+        print(f"Process terminated normally: {future.result()}")
+    except TimeoutError:
+        print('Process terminated forcefully: time limit reached')
+        saveAsJson(str(instance), name, "./res/SMT/", (time_limit, 0, "N/A"))

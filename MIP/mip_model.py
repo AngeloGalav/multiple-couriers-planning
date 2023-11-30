@@ -7,6 +7,7 @@ from data_handlers import saveAsJson, computeBounds, parseInstance
 from argparse import ArgumentParser
 from pebble import concurrent
 from concurrent.futures import TimeoutError
+from multiprocessing import get_context
 
 """
 m = 3
@@ -217,11 +218,12 @@ def run():
     saveAsJson(str(instance), solv_arg, "./res/MIP/", getSolution(prob, status, X, n, m))
     return 0
 
-future = run()
+if __name__ == '__main__':
+    future = run()
 
-try:
-    print(f"Process terminated normally: {future.result()}")
-except TimeoutError:
-    print('Process terminated forcefully: time limit reached')
-    saveAsJson(str(instance), solv_arg, "./res/MIP/", (time_limit, 0, "N/A"))
+    try:
+        print(f"Process terminated normally: {future.result()}")
+    except TimeoutError:
+        print('Process terminated forcefully: time limit reached')
+        saveAsJson(str(instance), solv_arg, "./res/MIP/", (time_limit, 0, "N/A"))
 

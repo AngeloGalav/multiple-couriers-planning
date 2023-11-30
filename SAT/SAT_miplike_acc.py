@@ -262,12 +262,12 @@ def run():
         print_costs()
         print_solution(model)
 
+if __name__ == '__main__':
+    future = run()
 
-future = run()
-
-try:
-    print(f"Process terminated normally: {future.result()}")
-except TimeoutError:
-    print('Process terminated forcefully: time limit reached')
-    save_solution(instance, name, (time_limit, 0, "N/A"))
+    try:
+        print(f"Process terminated normally: {future.result()}")
+    except TimeoutError:
+        print('Process terminated forcefully: time limit reached')
+        save_solution(instance, name, (time_limit, 0, "N/A"))
 

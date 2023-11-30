@@ -198,10 +198,11 @@ def run():
         print_input(D, s, l)
         print_solution(model)
 
-future = run()
+if __name__ == '__main__':
+    future = run()
 
-try:
-    future.result()
-except TimeoutError:
-    print('Process terminated forcefully: time limit reached')
-    save_solution(instance, name, (time_limit, 0, "N/A"))
+    try:
+        future.result()
+    except TimeoutError:
+        print('Process terminated forcefully: time limit reached')
+        save_solution(instance, name, (time_limit, 0, "N/A"))
