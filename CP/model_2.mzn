@@ -1,4 +1,7 @@
-include "globals.mzn"; % we could include the used globals individually
+include "alldifferent.mzn"; % we could include the used globals individually
+include "bin_packing_capa.mzn";
+include "strictly_increasing.mzn";
+
 
 % Define the input data
 int: m; % number of couriers
