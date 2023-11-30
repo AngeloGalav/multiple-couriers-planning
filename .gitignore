@@ -3,3 +3,4 @@ __pycache__
 res
 *.tar.gz
 CP/model_3.2_template.mzn
+check_solution.py
