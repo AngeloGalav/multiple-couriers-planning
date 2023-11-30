@@ -1,3 +1,4 @@
+% Use this editor as a MiniZinc scratch book
 include "globals.mzn"; % we could include the used globals individually
 
 % Define the input data
@@ -21,6 +22,7 @@ var LB..UB: cost;
 % CONSTRAINT DEFINITION
 
 % C1 - The total weight of items transported by a courier must be lower or equal than the courier's maximum laod.
+% constraint bin_packing_capa(l, x, s);
 constraint bin_packing_capa(l, x, s);
 
 % C2 - each path starts and ends with n+1
@@ -46,14 +48,26 @@ constraint forall(i in 1..n, k in 1..m) (
 % C6 - Each package is delivered once (implied constraint)
 constraint alldifferent_except(tour, {n+1});
 
+% -- constraints for simmetry breaking
+
+% % % if two couriers have the same load size, the number of possible assignments doubles since the two couriers are interchangable
+% % % if courier k1 and k2 (k1 < k2) have the same capacity, we impose that count[k1] <= count[k2]
+% % % this constraint does not remove all such symmetries, but it removes a lot of them and propagates well
+constraint symmetry_breaking_constraint(  
+  forall(k in 1..m-1 where l[k] == l[k+1])(
+    min(i in 1..n where x[i] == k)(i) < min(j in 1..n where x[j] == k+1)(j)
+  )
+);
+
 constraint cost = max([sum(i in seg[k]..seg[k+1]-1)(D[tour[i], tour[i+1]])| k in 1..m]);
 
-%solve :: int_search(tour, dom_w_deg, indomain_min) minimize cost :: restart_luby(2);
+% solve :: int_search(tour, <strat>, <indom_heur>) minimize cost :: <restart>;
 
 %annotations here
 
 
 % output ["Solution:\n"];
+% output ["is_symmetric =    \(cost_matrix_is_symmetric)\n"];
 % output ["x =    \(x)\n"];
 % output ["tour = \(tour)\n"];
 % output ["seg = \(seg)\n"];

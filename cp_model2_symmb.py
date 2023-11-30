@@ -18,7 +18,7 @@ solvers = ["gecode", "chuffed"]
 strategies = ["first_fail"]
 heuristics = ["indomain_split"]
 restarts = ["restart_none"]
-solvers = ["chuffed"]
+solvers = ["gecode", "chuffed"]
 
 
 # --- ARGS ---
@@ -29,7 +29,7 @@ parser.add_argument("-he", "--heuristic", type=str,
                     choices=["min", "median", "random", "split"], default='min')
 parser.add_argument("-r", "--restart", type=str,
                     choices=["linear", "geometric", "luby", "none"], default="linear")
-parser.add_argument("-sc", "--scale", type=int, default=5)
+parser.add_argument("-sc", "--scale", type=int, default=100)
 parser.add_argument("-b", "--base", type=int, default=2)
 parser.add_argument("-i", "--instance", type=int, default=3)
 parser.add_argument('-a', '--all', action='store_true')
@@ -42,7 +42,7 @@ instance_id = args[5][1]
 inst_file = './instances/'+"inst"+str(instance_id).zfill(2)+".dat"
 run_all_ = args[6][1]
 
-template_path = "CP/model_2.mzn"
+template_path = "CP/model_2_symmb.mzn"
 replace_template = """%annotations here
 solve :: int_search(tour, <strat>, <indom_heur>) minimize cost :: <restart>;"""
 
@@ -62,15 +62,18 @@ def clean_up_template() :
             with open(template_path, 'w') as file:
                 file.write(replaced_text)
 
-def getSolution(solution):
-    x_vals = np.array(solution.x, dtype=np.int32)
+def getSolution(solution, original_order):
     tour_vals = np.array(solution.tour, dtype=np.int32)
     seg_vals = np.array(solution.seg, dtype=np.int32)
-    count_vals = np.array(solution.count, dtype=np.int32)
     sol = []
     for i in range(len(seg_vals)-1):
         sol.append(tour_vals[seg_vals[i]:seg_vals[i+1]-1].tolist())
-    return sol
+    
+    ordered_sol = []
+    for i in original_order:
+        ordered_sol.append(sol[i])
+    
+    return ordered_sol
     
 def run_cp_instance(model, solverName, dataFile, heur_info=None) :
     # model = Model(modelFile)
@@ -87,9 +90,15 @@ def run_cp_instance(model, solverName, dataFile, heur_info=None) :
     LB, UB = computeBounds(D, m, n)
 
     # load instance data into the model
+
+    # order the loads so that couriers with equal loads are adjacent (less constraints)
+    courier_order = np.array(l).argsort()
+    ordered_l = np.array(l)[courier_order].tolist()
+    original_order = courier_order.argsort()
+
     instance["m"] = m
     instance["n"] = n
-    instance["l"] = l
+    instance["l"] = ordered_l
     instance["s"] = s
     instance["D"] = D
     instance["LB"] = LB
@@ -104,9 +113,9 @@ def run_cp_instance(model, solverName, dataFile, heur_info=None) :
     solv_info = ''
     if heur_info != None :
         ss, rs, hs = heur_info
-        solv_info = solverName + '_' + ss + '_' + rs + '_' + hs
+        solv_info = solverName + '_' + ss + '_' + rs + '_' + hs + '_symmb'
     else :
-        solv_info = solverName
+        solv_info = solverName + '_symmb'
 
     # save as json with instance name
     if result != None and result.solution != None:
@@ -116,7 +125,7 @@ def run_cp_instance(model, solverName, dataFile, heur_info=None) :
         else:
             time_search = round((result.statistics['initTime']+result.statistics['solveTime']).total_seconds(), 2)
         saveAsJson(str(instance_id), solv_info, "res/CP/",
-                (time_search, result.solution.cost, getSolution(result.solution)))
+                (time_search, result.solution.cost, getSolution(result.solution, original_order)))
     else :
         saveAsJson(str(instance_id), solv_info, "res/CP/",
                 (300, 0, "N/A"))
