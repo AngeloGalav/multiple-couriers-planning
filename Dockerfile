@@ -25,8 +25,13 @@ RUN wget https://github.com/JuliaBinaryWrappers/HiGHSstatic_jll.jl/releases/down
 RUN tar -xzvf HiGHSstatic.v1.6.0.x86_64-linux-gnu-cxx11.tar.gz bin/highs -C highs
 RUN cp bin/highs /usr/local/bin
 
-# # solves PEP 668
+# solves PEP 668
 RUN rm /usr/lib/python3.11/EXTERNALLY-MANAGED
 
-RUN pip install z3-solver numpy pulp scipy minizinc uuid typing more-itertools pebble
+RUN pip install z3-solver numpy pulp scipy minizinc uuid typing more-itertools cython pebble pysmt
+RUN pysmt-install --msat --confirm-agreement
+RUN git clone https://github.com/cython/cython
+RUN rm -rf /usr/local/lib/python3.11/dist-packages/pyximport/
+RUN mv /cython/pyximport /usr/local/lib/python3.11/dist-packages
+
 CMD [ "bash" ]
