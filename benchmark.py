@@ -20,12 +20,12 @@ model_family = args[2][1]
 # definitions
 models = {"SAT" : ["SAT/SAT_cplike.py", "SAT/SAT_miplike_acc.py"],
           "MIP" : ["MIP/mip_model.py"],
-          "SMT" : ["SMT/SMT_pySMT.py"],
+          "SMT" : ["SMT/SMT_independent.py"],
           "CP"  : ["cp_python.py"]}
 
 opts = {"SAT" : ["-s binary", "-s sequential"],
         "MIP" : ["-s glpk", "-s cbc", "-s scip", "-s highs"],
-        "SMT" : ["z3","msat"],
+        "SMT" : ["-s z3","-s msat"],
         "CP"  : ["-a"]}
 
 def run_model(instance, opts, model) :
