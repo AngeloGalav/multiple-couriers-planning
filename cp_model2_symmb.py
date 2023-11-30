@@ -9,17 +9,10 @@ import numpy as np
 
 timeout = timedelta(seconds=300)
 
-"""
 strategies = ["input_order", "first_fail", "smallest", "dom_w_deg"]
 heuristics = ["indomain_min", "indomain_median", "indomain_random", "indomain_split"]
-restarts = ["::restart_linear(<scale>)", "::restart_geometric(<base>,<scale>)", "::restart_luby(<scale>)", "restart_none"]
+restarts = ["restart_linear(<scale>)", "restart_geometric(<base>,<scale>)", "restart_luby(<scale>)", "restart_none"]
 solvers = ["gecode", "chuffed"]
-"""
-strategies = ["first_fail"]
-heuristics = ["indomain_split"]
-restarts = ["restart_none"]
-solvers = ["gecode", "chuffed"]
-
 
 # --- ARGS ---
 parser = ArgumentParser()

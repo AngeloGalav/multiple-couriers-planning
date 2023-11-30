@@ -9,26 +9,19 @@ import numpy as np
 
 timeout = timedelta(seconds=300)
 
-"""
 strategies = ["input_order", "first_fail", "smallest", "dom_w_deg"]
 heuristics = ["indomain_min", "indomain_median", "indomain_random", "indomain_split"]
-restarts = ["::restart_linear(<scale>)", "::restart_geometric(<base>,<scale>)", "::restart_luby(<scale>)", "restart_none"]
+restarts = ["restart_linear(<scale>)", "restart_geometric(<base>,<scale>)", "restart_luby(<scale>)", "restart_none"]
 solvers = ["gecode", "chuffed"]
-"""
-strategies = ["first_fail"]
-heuristics = ["indomain_split"]
-restarts = ["restart_none"]
-solvers = ["chuffed"]
-
 
 # --- ARGS ---
 parser = ArgumentParser()
 parser.add_argument("-s", "--strategy", type=str,
-                    choices=strategies, default='input_order')
+                    choices=strategies, default='first_fail')
 parser.add_argument("-he", "--heuristic", type=str,
-                    choices=["min", "median", "random", "split"], default='min')
+                    choices=["min", "median", "random", "split"], default='split')
 parser.add_argument("-r", "--restart", type=str,
-                    choices=["linear", "geometric", "luby", "none"], default="linear")
+                    choices=["linear", "geometric", "luby", "none"], default="none")
 parser.add_argument("-sc", "--scale", type=int, default=5)
 parser.add_argument("-b", "--base", type=int, default=2)
 parser.add_argument("-i", "--instance", type=int, default=3)
