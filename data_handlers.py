@@ -89,18 +89,11 @@ def parseInstance(filename):
 
     return m,n,l,s,D
 
-def lower_bound(D, m, n):
-    Q = math.ceil(n/m)
-    mL = min([D[n][i] for i in range(n)]) # last row
-    mR = min([D[i][n] for i in range(n)]) # last column
-    mins = [min(D[j][i] for j in range(n) if i!=j) for i in range(n)]
-    mins.sort()
-    min_arr_lb = sum(mins[:Q-1]) + mL + mR
-
+def lower_bound(D, n):
     simple_path_costs = [D[n][i]+D[i][n] for i in range(n)]
     sim_path_lb = max(simple_path_costs)
 
-    return max(sim_path_lb, min_arr_lb)
+    return sim_path_lb
 
 def upper_bound(D, m, n):
     Q = n-m+1
@@ -113,7 +106,7 @@ def upper_bound(D, m, n):
     return sum(maxes[:Q-1]) + ML + MR
 
 def computeBounds(D, m, n):
-    return lower_bound(D, m, n), upper_bound(D, m, n)
+    return lower_bound(D, n), upper_bound(D, m, n)
 
 def saveAsJson(instanceName, solveName, path, solutionInfo):
     time, obj, sol = solutionInfo
