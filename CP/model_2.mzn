@@ -32,7 +32,7 @@ constraint tour[n+m+1] = n+1;
 constraint count_eq(tour, n+1, m+1);
 
 % C3 - seg constraints
-constraint strictly_increasing(seg); % segments must be ordered (implied constraint)
+% constraint strictly_increasing(seg); % segments must be ordered (implied constraint)
 constraint forall(k in 1..m+1)(tour[seg[k]] = n+1); % segment indices correspond to n+1 in tour
 
 % C4 - count constraints
