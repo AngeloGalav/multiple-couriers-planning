@@ -52,9 +52,8 @@ constraint alldifferent_except(tour, {n+1});
 
 % -- constraints for simmetry breaking
 
-% % % if two couriers have the same load size, the number of possible assignments doubles since the two couriers are interchangable
-% % % if courier k1 and k2 (k1 < k2) have the same capacity, we impose that count[k1] <= count[k2]
-% % % this constraint does not remove all such symmetries, but it removes a lot of them and propagates well
+% if two couriers have the same load size, the number of possible assignments doubles since the two couriers are interchangable
+% if courier k1 and k2 (k1 < k2) have the same capacity, we impose that an item is first assigned to k1 and then to k2 in the ordering of array x
 constraint symmetry_breaking_constraint(  
   forall(k in 1..m-1 where l[k] == l[k+1])(
     min(i in 1..n where x[i] == k)(i) < min(j in 1..n where x[j] == k+1)(j)
