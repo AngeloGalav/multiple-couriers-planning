@@ -16,7 +16,7 @@ int: UB;
 % Define the decision variables
 array[1..n] of var 1..m: x; % x[i] contains the index j of the courier assigned to item i. 
 array[1..n+m+1] of var 1..n+1: tour; % a segment tour[seg[k]..seg[k+1]] defines the path fpr courier k, segments are separated by n+1 (which also occurs in the first and last position)
-array[1..m] of var 1..n: count; % count[k] contains the number of items assigned to courier k
+array[1..m] of var 1..n-m+1: count; % count[k] contains the number of items assigned to courier k
 array[1..m+1] of var 1..n+m+1: seg; % seg[k] is the position of the k-th occurrence of n+1 in tour
 
 var LB..UB: cost;
