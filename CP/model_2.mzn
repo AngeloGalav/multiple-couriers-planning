@@ -32,14 +32,16 @@ constraint tour[n+m+1] = n+1;
 constraint count_eq(tour, n+1, m+1);
 
 % C3 - seg constraints
-% constraint strictly_increasing(seg); % segments must be ordered (implied constraint)
 constraint forall(k in 1..m+1)(tour[seg[k]] = n+1); % segment indices correspond to n+1 in tour
+
+constraint forall(k in 1..m)(seg[k+1] = seg[k]+count[k]+1); % syncronization between count and segment
+constraint seg[1] = 1;
+constraint seg[m+1] = n+m+1;
 
 % C4 - count constraints
 constraint forall(k in 1..m) ( 
   count_eq(x, k, count[k])
 );
-constraint forall(k in 1..m)(seg[k+1] = seg[k]+count[k]+1); % syncronization between count and segment
 
 % C5 - If a courier delivers item i, then value i must appear in the correct segment of tour
 constraint forall(i in 1..n, k in 1..m) (
