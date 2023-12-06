@@ -21,11 +21,11 @@ After that, we need to enter inside of the container. To do that, just use:
 docker exec -it cdmo bash
 ```
 After you've run the command, you should be able to get inside the container and run the required scripts.
-You can find the scripts inside of the docker container by using `cd /mine && ls -al`.
+You can find the scripts inside of the docker container by using `cd /cdmo_project && ls -al`.
 
 ### Running models inside of the container
 When inside of the container, you need to use `python3` instead of the standard python command.
-In this way you can run a model by first getting inside of the `mine` folder using `cd mine`.
+In this way you can run a model by first getting inside of the `cdmo_project` folder using `cd cdmo_project`.
 After that, simply run the model by using, for example:
 ```
 python3 cp_python.py -i 5 -so chuffed
@@ -45,8 +45,8 @@ To be sure that you have killed the container, use the command `docker ps -a`. I
 If you need any of the generated files, such as results files, you can simply copy the files by opening another `bash` console on your local machine (not the container), and then typing
 
 ```
-docker cp cdmo:/mine/res ./res
+docker cp cdmo:/cdmo_project/res ./res
 ```
 
 #### About the `docker_bins` folder
-The `docker_bins` folder contains a special version of the `scip` solver, which was compiled on a Debian container in order to work inside of other Debian containers. It's not very special, however it is need as the official `.dpkg` provided by the Zuse Institute Berlin (ZIB) did not seem to work properly and would require some obsolete dependencies.
+The `docker_bins` folder contains a special version of the `scip` solver, which was compiled on a Debian container in order to work inside of other Debian containers. It's not very special, however it is needed as the official `.dpkg` provided by the Zuse Institute Berlin (ZIB) did not seem to work properly and would require some obsolete dependencies.

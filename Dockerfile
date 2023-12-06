@@ -1,5 +1,5 @@
 FROM debian:12
-COPY . /mine
+COPY . /cdmo_project
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -yq
 RUN apt-get -yq install python3 pip minizinc bash coinor-cbc coinor-libcbc-dev glpk-utils wget nano bash
@@ -10,7 +10,7 @@ RUN apt-get -yq install wget cmake g++ m4 xz-utils libgmp-dev unzip zlib1g-dev l
 RUN apt-get -yq install build-essential libreadline-dev libz-dev libgmp3-dev lib32ncurses5-dev libboost-program-options-dev libblas-dev
 
 # SCIP installation
-RUN cp /mine/docker_bins/scip /usr/local/bin
+RUN cp /cdmo_project/docker_bins/scip /usr/local/bin
 
 # chuffed installation
 RUN git clone https://github.com/chuffed/chuffed

@@ -14,3 +14,4 @@ benchmark.py
 */__pycache__
 unused_SMT
 cp_model3.py
+CP/model_3.2_template.mzn
