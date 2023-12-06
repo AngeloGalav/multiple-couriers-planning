@@ -1,0 +1,15 @@
+other_docs
+drafts
+check_solution.py
+build_consegna.sh
+__pycache__
+CP/input.dzn
+instances/instance1.dzn
+instances/instance1_unformatted.txt
+instances/instance2_galf.dzn
+instances/SAT_instance.txt
+AUTHORS
+CDMO_Proj_FreddiDavide_GalavottiAngelo_PalliNicola.tar.gz
+benchmark.py
+*/__pycache__
+unused_SMT
