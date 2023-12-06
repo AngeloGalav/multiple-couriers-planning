@@ -1,7 +1,7 @@
 import sys, time, z3
 import numpy as np
 from math import floor
-from z3 import Int, Sum, Implies, If, And, Or, Bool
+from z3 import Int, Sum, Implies, If, And, Or, Bool, Not
 from argparse import ArgumentParser
 from itertools import combinations
 sys.path.append('./')
@@ -40,7 +40,7 @@ def run():
     U = [Int(f"U_{i}") for i in range(n)]
 
     # StartCost = [Int(f"StartCost_{k}") for k in range(m)]
-    # DepCost = [[Int(f"DepCost_{k}_{i}") for i in range(n)] for k in range(m)]
+    DepCost = [[Int(f"DepCost_{k}_{i}") for i in range(n+1)] for k in range(m)]
     C = [Int(f"C_{k}") for k in range(m)]
     MaxCost = Int('MaxCost')
 
@@ -49,7 +49,6 @@ def run():
         for i in range(n):
             solver += U[i] > 0
             solver += U[i] <= n
-            
 
         # C1
         for i in range(n):
@@ -109,11 +108,27 @@ def run():
                     if time_limit - (time.time()-start_time) < 0:
                         return
 
+        for k in range(m):
+            for j in range(n):
+                solver.add(Implies(X[k][n][j], DepCost[k][n] == D[n][j]))
+                if time_limit - (time.time()-start_time) < 0:
+                    return
+
+        for k in range(m):
+            for i in range(n):
+                solver.add(Implies(Not(Y[k][i]), DepCost[k][i] == 0))
+                for j in range(n+1):
+                    if i != j:
+                        solver.add(Implies(X[k][i][j], DepCost[k][i] == D[i][j]))
+                        if time_limit - (time.time()-start_time) < 0:
+                            return
+
         if verbose:
             print(f"constraint C5 added")
 
         for k in range(m):
-            solver += C[k] == Sum([If(X[k][i][j], D[i][j], 0) for i in range(n+1) for j in range(n+1) if i != j])
+            # solver += C[k] == Sum([If(X[k][i][j], D[i][j], 0) for i in range(n+1) for j in range(n+1) if i != j])
+            solver += C[k] == Sum(DepCost[k])
             solver += MaxCost >= C[k]
 
         solver += Or([MaxCost == C[k] for k in range(m)])
@@ -161,7 +176,7 @@ def run():
 
     # -- save solution
     def getSolution():
-        if model is None:
+        if model is None or len(model) == 0:
             obj = 0
             sol = "N/A"
         else:

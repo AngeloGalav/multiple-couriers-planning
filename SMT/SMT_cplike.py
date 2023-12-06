@@ -129,7 +129,7 @@ def run():
     model = solver.model()
 
     def getSolution():
-        if model is None:
+        if model is None or len(model) == 0:
             obj = 0
             sol = "N/A"
         else:
