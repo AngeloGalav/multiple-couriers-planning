@@ -1,4 +1,4 @@
-# How to use the docker container?
+# How to use the docker container
 
 ## Building the container
 To use the docker container, you must have first installed the Docker application.
