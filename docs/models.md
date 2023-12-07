@@ -17,6 +17,8 @@ There are 2 Python scripts that are associated with the models that exploit Cons
 - `cp_model2.py` runs `model_2.mzn`
 - `cp_model2_symmb.py` run `model_2_symmb.mzn`
 
+Both these scripts are setup with the optimal options regarding the heuristics by default.
+
 To run a model through the Python scripts type:
 ```
 python3 cp_model2.py [-i INSTANCE] [-so {gecode,chuffed}]
@@ -37,7 +39,7 @@ python3 MIP/mip_model.py [-s {cbc,glpk,scip,highs}] [-i INSTANCE]
 - `-i` allows to select the instance to use the solver on. You must specify an integer value, that is the id of the instance.
 
 ## SAT
-We made 2 models using SAT: `SAT_cplike.py` and `SAT_miplike_acc.py`. Each of them uses different techniques to solve the problem, as it's specified in the report.
+We made 2 models using SAT: `SAT_cplike.py` and `SAT_miplike_acc.py`. Each of them uses different techniques to solve the problem, as specified in the report.
 The scripts must be run from the __root folder__ of the project, specifying the relative path of the script as shown in the example below.
 Each of the SAT scripts uses the same arguments.
 
@@ -52,8 +54,8 @@ python3 SAT/SAT_cplike.py [-i INSTANCE] [-v] [-s {binary,sequential}]
 
 
 ## SMT
-We made 3 models using SMT, which can be found in the following Python script:
-- `SMT_cplike.py` and `SMT_miplike.py`, which provide a solver dependent SMT model.
+We made 3 models using SMT, which can be found in the following Python scripts:
+- `SMT_cplike.py` and `SMT_miplike.py`, which provide a solver dependent SMT model. These are also the models that have been used to run the main experiments reported in the SMT section of the report.
 - `SMT_independent.py`, which runs a solver independent SMT model.
 
 As such, there are some differences in options that can be used for each model.
@@ -75,8 +77,8 @@ python3 SMT/SMT_cplike.py [-v] [-i INSTANCE]
 
 To execute the model, run the command:
 ```
-python3 SMT/SMT_independent.py [-i INSTANCE] [-v] [-s {z3,msat,cvc4}]
+python3 SMT/SMT_independent.py [-i INSTANCE] [-v] [-s {z3,msat}]
 ```
 - `-i` allows to select the instance to use the solver on. You must specify an integer value, that is the id of the instance.
 - `-v` allows to print a verbose output when running the script.
-- `-s` allows to specify the solver to use. The possible options are {z3,msat,cvc4}.
+- `-s` allows to specify the solver to use. The possible options are {z3,msat}.

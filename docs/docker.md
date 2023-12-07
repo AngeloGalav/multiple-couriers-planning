@@ -30,7 +30,7 @@ After that, simply run the model by using, for example:
 ```
 python3 cp_python.py -i 5 -so chuffed
 ```
-__N.B.__: You __have__ to use `python3` instead of `python` as that is the name of the executable in debian. 
+__N.B.__: You __have__ to use `python3` instead of `python` as that is the name of the executable in Debian.
 
 ## Killing the container
 After you're done with your work, you'll have to stop the container and removing it.
