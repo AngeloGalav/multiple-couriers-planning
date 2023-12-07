@@ -9,7 +9,7 @@ from z3 import Bool, BoolRef
 from z3 import Or, And, Not, Xor, Implies
 
 #adds a padding in the number as boolean
-def pad(l, length)->BoolRef:                           
+def pad(l, length):                           
     assert length > 0 and length >= len(l), '\nl:\t{}\nlength:\t{}'.format(l, length)
 
     return [False for _ in range(length - len(l))] + l
@@ -30,7 +30,7 @@ def get_bool_lists(*ll):
     return ll
 
 #bool to int (example, [F,T,F,T]->5)
-def bool2int(l) -> int:                                                 
+def bool2int(l):                                                 
     result = 0
     l_b = []
     for _, l_i in enumerate(l):
@@ -44,7 +44,7 @@ def bool2int(l) -> int:
     return result
 
 #int to bool (example, 5->[T;F;T])
-def int2boolList(n) -> List[bool]:                                                     
+def int2boolList(n):                                                     
     result = []
     base2 = format(n, "b")
     for bit in base2:
@@ -55,15 +55,15 @@ def int2boolList(n) -> List[bool]:
     return result
 
 #all False
-def all_F(l) -> BoolRef:                                           
+def all_F(l):                                           
     return And([Not(b) for b in l])
 
 #al least 1 (min 1 T)
-def at_least_one_T(bools) -> BoolRef:                                      
+def at_least_one(bools):                                      
     return Or(bools)
 
 #at most 1  (max 1 T)
-def at_most_one_T(bools) -> BoolRef:
+def at_most_one(bools):
     if len(bools) <= 4: # base case
         return And([Not(And(b1, b2)) for b1, b2 in combinations(bools, 2)])
     
@@ -71,30 +71,30 @@ def at_most_one_T(bools) -> BoolRef:
     y = Bool(f"yamo_{str(uuid.uuid4())}")
     first = bools[:3]
     first.append(y)
-    c_first = at_most_one_T(first)
+    c_first = at_most_one(first)
 
     last = bools[3:]
     last.insert(0, Not(y))
-    c_last = at_most_one_T(last)
+    c_last = at_most_one(last)
 
     return And(c_first, c_last)
 
 # 1 T
-def exactly_one_T(bools) -> BoolRef:                                      
-    return And(at_most_one_T(bools), at_least_one_T(bools))
+def exactly_one(bools):                                      
+    return And(at_most_one(bools), at_least_one(bools))
 
 #not equal
-def ne(l1, l2) -> BoolRef:                                                            
+def ne(l1, l2):                                                            
     l1, l2 = get_bool_lists(l1, l2)
     min_len = min(len(l1), len(l2))
     start_idx = [len(l1) - min_len, len(l2) - min_len]
 
-    c1 = at_least_one_T(l1[:start_idx[0]])
-    c2 = at_least_one_T(l2[:start_idx[1]])
+    c1 = at_least_one(l1[:start_idx[0]])
+    c2 = at_least_one(l2[:start_idx[1]])
     return Or([c1, c2] + [Xor(l1i, l2i) for l1i, l2i in zip(l1, l2)])
 
 #equal
-def eq(l1, l2) -> BoolRef:                                        
+def eq(l1, l2):                                        
     l1, l2 = get_bool_lists(l1, l2)
     max_len = max(len(l1), len(l2))
     l1 = pad(l1, max_len)
@@ -103,7 +103,7 @@ def eq(l1, l2) -> BoolRef:
     return And([l1[i] == l2[i] for i in range(max_len)])
 
 #l1>=l2 with same len
-def __gte_same_len(l1, l2) -> BoolRef:
+def __gte_same_len(l1, l2):
     if len(l1) == 1:
         return Or(l1[0], Not(l2[0]))
 
@@ -127,18 +127,18 @@ def __gte_same_len(l1, l2) -> BoolRef:
     return And(And(xConstr), Or(gteConstr))
 
 #l1>=l2
-def gte(l1, l2) -> BoolRef:                                            
+def gte(l1, l2):                                            
     l1, l2 = get_bool_lists(l1, l2)
     min_len = min(len(l1), len(l2))
     start_idx = [len(l1) - min_len, len(l2) - min_len]
 
-    c1 = at_least_one_T(l1[:start_idx[0]])
+    c1 = at_least_one(l1[:start_idx[0]])
     c2 = all_F(l2[:start_idx[1]])
 
     return Or(c1, And(c2, __gte_same_len(l1[start_idx[0]:], l2[start_idx[1]:])))
 
 #l1>l2 same len
-def __gt_same_len(l1, l2) -> BoolRef:
+def __gt_same_len(l1, l2):
     if len(l1) == 1:
         return And(l1[0], Not(l2[0]))
 
@@ -160,26 +160,26 @@ def __gt_same_len(l1, l2) -> BoolRef:
     return And(And(xConstr), Or(gtConstr))
 
 #l1>l2
-def gt(l1, l2) -> BoolRef:                                      
+def gt(l1, l2):                                      
     l1, l2 = get_bool_lists(l1, l2)
     min_len = min(len(l1), len(l2))
     start_idx = [len(l1) - min_len, len(l2) - min_len]
 
-    c1 = at_least_one_T(l1[:start_idx[0]])
+    c1 = at_least_one(l1[:start_idx[0]])
     c2 = all_F(l2[:start_idx[1]])
 
     return Or(c1, And(c2, __gt_same_len(l1[start_idx[0]:], l2[start_idx[1]:])))
 
 #l1<=l2
-def lte(l1, l2) -> BoolRef:                                                              
+def lte(l1, l2):                                                              
     return gte(l1=l2, l2=l1)
 
 #l1<l2
-def lt(l1, l2) -> BoolRef:                                   
+def lt(l1, l2):                                   
     return gt(l1=l2, l2=l1)
 
 #binary sum (into a Z3 formula)
-def sum_b(l1, l2) -> BoolRef:                                
+def sum_b(l1, l2):                                
     l1, l2 = get_bool_lists(l1, l2)
     max_len = max(len(l1), len(l2))
     l1 = pad(l1, max_len)
@@ -201,35 +201,13 @@ def sum_b(l1, l2) -> BoolRef:
 
     return result
 
-#binary subtraction
-def sub_b(l1, l2) -> BoolRef:
-    l1, l2 = get_bool_lists(l1, l2)
-    max_len = max(len(l1), len(l2))
-    l1 = pad(l1, max_len)
-    l2 = pad(l2, max_len)
-    result = []
-
-    borr_in = False
-    borr_out = False
-
-    for i in range(len(l1) - 1, -1, -1):
-        a = l1[i]
-        b = l2[i]
-        result.append(Xor(Xor(a, b), borr_in))
-
-        borr_out = Or(And(Not(Xor(a, b)), borr_in), And(Not(a), b))
-        borr_in = borr_out
-
-    result = result[::-1]
-    return result
-
-def sum_b_list(l) -> BoolRef:
+def sum_b_list(l):
     result=l[0]
     for i in range(1,len(l)):
         result = sum_b(result,l[i])
     return result
 
-def enable(l,en)->BoolRef:
+def enable(l,en):
     return [And(i,en) for i in l]
 
 #inputs: list of n binary encodings and a list of n bools used for masking

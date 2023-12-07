@@ -52,10 +52,10 @@ def run():
 
         # C1
         for i in range(n):
-            solver.add(sf.at_least_one_T([X[k][i][j] for j in range(n+1) if i != j for k in range(m)]))
-            solver.add(sf.at_least_one_T([X[k][j][i] for j in range(n+1) if i != j for k in range(m)]))
+            solver.add(sf.at_least_one([X[k][i][j] for j in range(n+1) if i != j for k in range(m)]))
+            solver.add(sf.at_least_one([X[k][j][i] for j in range(n+1) if i != j for k in range(m)]))
             for k in range(m):
-                solver.add(sf.at_most_one_T([X[k][j][i] for j in range(n+1) if i != j]))
+                solver.add(sf.at_most_one([X[k][j][i] for j in range(n+1) if i != j]))
                 if time_limit - (time.time()-start_time) < 0:
                     return
 
@@ -65,14 +65,14 @@ def run():
         # C2
         for i in range(n):
             for k in range(m):
-                solver.add(Y[k][i] == sf.at_least_one_T([X[k][i][j] for j in range(n+1) if i != j]))
-                solver.add(Y[k][i] == sf.at_least_one_T([X[k][j][i] for j in range(n+1) if i != j]))   
+                solver.add(Y[k][i] == sf.at_least_one([X[k][i][j] for j in range(n+1) if i != j]))
+                solver.add(Y[k][i] == sf.at_least_one([X[k][j][i] for j in range(n+1) if i != j]))   
                 if time_limit - (time.time()-start_time) < 0:
                     return     
 
         # C2.5
         for i in range(n):
-            solver.add(sf.exactly_one_T([Y[k][i] for k in range(m)]))
+            solver.add(sf.exactly_one([Y[k][i] for k in range(m)]))
             if time_limit - (time.time()-start_time) < 0:
                     return
 
@@ -90,9 +90,9 @@ def run():
 
         # C4
         for k in range(m):
-            solver.add(sf.exactly_one_T([X[k][n][j] for j in range(n)]))
-            solver.add(sf.exactly_one_T([X[k][i][n] for i in range(n)]))
-            solver.add(sf.at_least_one_T([Y[k][i] for i in range(n)]))
+            solver.add(sf.exactly_one([X[k][n][j] for j in range(n)]))
+            solver.add(sf.exactly_one([X[k][i][n] for i in range(n)]))
+            solver.add(sf.at_least_one([Y[k][i] for i in range(n)]))
             if time_limit - (time.time()-start_time) < 0:
                     return
 
@@ -103,7 +103,7 @@ def run():
         for i in range(n):
             for j in range(n):
                 if i != j:
-                    arc_traversed = sf.at_least_one_T([X[k][i][j] for k in range(m)])
+                    arc_traversed = sf.at_least_one([X[k][i][j] for k in range(m)])
                     solver.add(Implies(arc_traversed, U[j] > U[i]))
                     if time_limit - (time.time()-start_time) < 0:
                         return

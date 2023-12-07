@@ -63,12 +63,12 @@ def run():
                 return
 
         for k in range(m):
-            solver += sf.at_least_one_T(XMat[k])
+            solver += sf.at_least_one(XMat[k])
             if time_limit - (time.time()-start_time) < 0:
                 return
 
         for i in range(n):
-            solver += sf.exactly_one_T([XMat[k][i] for k in range(m)])
+            solver += sf.exactly_one([XMat[k][i] for k in range(m)])
             if time_limit - (time.time()-start_time) < 0:
                 return
 
