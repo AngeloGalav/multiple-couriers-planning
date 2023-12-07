@@ -78,7 +78,7 @@ def run():
         U[i] = LpVariable(f"U_{i}", lowBound=1, upBound=n, cat=LpInteger)
 
     for k in myRange(m):
-        C[k] = LpVariable(f"C_{k}", lowBound=0, upBound=UB, cat=LpInteger)
+        C[k] = LpVariable(f"C_{k}", lowBound=1, upBound=UB, cat=LpInteger)
 
     for k in myRange(m):
         B[k] = LpVariable(f"B_{k}", cat=LpBinary)
